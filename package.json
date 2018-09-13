@@ -1,0 +1,19 @@
+{
+  "name": "hdtv-admin",
+  "version": "0.0.0",
+  "description": "hdtv的管理系统",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hdtv"
+  ],
+  "author": "zackbee",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "redis": "^2.8.0"
+  }
+}
