@@ -1,4 +1,4 @@
 node_modules
-config/admin.json
+config/admin.js
 config/redis.conf
 test.*
