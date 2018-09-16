@@ -77,7 +77,8 @@ app.post("/authorize", (req, res) => {
             isChecked: true,
             userId: req.body.name,
             key: req.body.key
-        }
+        },
+        include: [User]
     }).then((live) => {
         if (live) {
             console.log("推流认证成功:\n", req.body.name)
@@ -100,16 +101,31 @@ app.post("/authorize", (req, res) => {
 
 // 节目推流完毕后从liveList中删除
 app.post("/liveDone", (req, res) => {
-    console.log("推流完成:\n", req.body.name)
     for (let i = 0, len = liveList.length; i < len; i++) {
         let live = liveList[i].get({ plain: true })
-        if (req.body.name === live.userId) {
-            liveList[i].update({ isLive: false})
+        if (req.body.name === live.userId && req.body.key === live.key) {
+            liveList[i].update({ isLive: false}).catch((err) => {
+                throw new Error(err)
+            })
             liveList.splice(i, 1)
+            console.log("推流完成:\n", req.body.name)
+            break
         }
     }
 })
 
 app.post("/dateLive", (req, res) => {
+
+})
+
+app.post("/addUser", (req, res) => {
+
+})
+
+app.post("/addAdmin", (req, res) => {
+
+})
+
+app.post("/checkLive", (req, res) => {
 
 })
