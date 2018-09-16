@@ -16,11 +16,9 @@ module.exports = (sequelize, DataTypes) => (
     sequelize.define("live", {
         title: DataTypes.STRING,
         date: DataTypes.DATEONLY,
-        ownerId: DataTypes.STRING,
         id: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
+            primaryKey: true
         }
     })
 )

@@ -11,7 +11,6 @@
  * | updatedAt   | datetime     | NO   |     | NULL    |       |
  * +-------------+--------------+------+-----+---------+-------+
  */
-
 module.exports = (sequelize, DataTypes) => (
     sequelize.define("user", {
         id: {
@@ -25,10 +24,12 @@ module.exports = (sequelize, DataTypes) => (
             type: DataTypes.STRING,
             validate: {
                 isAlphanumeric: true
-            }
+            },
+            defaultValue: "123456"
         },
         authority: {
-            type: DataTypes.INTEGER
+            type: DataTypes.INTEGER,
+            defaultValue: 3
         },
         channelName: {
             type: DataTypes.STRING

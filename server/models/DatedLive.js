@@ -18,13 +18,19 @@ module.exports = (sequelize, DataTypes) => (
     sequelize.define("datedLive", {
         title: DataTypes.STRING,
         date: DataTypes.DATEONLY,
-        ownerId: DataTypes.STRING,
         id: {
             type: DataTypes.INTEGER,
             primaryKey: true,
             autoIncrement: true
         },
+        isLive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
         key: DataTypes.STRING,
-        isChecked: DataTypes.BOOLEAN
+        isChecked: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        }
     })
 )
