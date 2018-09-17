@@ -1,6 +1,7 @@
 const path = require('path');
 const common = require("./webpack.common.js")
 const merge = require("webpack-merge")
+const webpack = require('webpack')
 
 const config = merge(common, {
     mode: "development",
@@ -21,7 +22,7 @@ const config = merge(common, {
         rules: [{
             test: /\.jsx?$/,
             loader: "babel-loader",
-            include: path.resolve(__dirname ,"../src"),
+            include: path.resolve(__dirname, "../src"),
             options: {
                 presets: ["react"]
             },
@@ -35,7 +36,16 @@ const config = merge(common, {
             index: "/index.html"
         },
         publicPath: "/",
-    }
+        hot: true,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+        }
+    },
+    plugins: [
+        new webpack.HotModuleReplacementPlugin()
+    ]
 })
 
 module.exports = config

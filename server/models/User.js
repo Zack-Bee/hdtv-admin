@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => (
         },
         authority: {
             type: DataTypes.INTEGER,
-            defaultValue: 3
+            defaultValue: 1
         },
         channelName: {
             type: DataTypes.STRING

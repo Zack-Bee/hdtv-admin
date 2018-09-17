@@ -7,6 +7,9 @@ const Sequelize = require("sequelize")
 const path = require("path")
 const config = require("../config/admin")
 const formatDate = require("./utils/formatDate")
+const cors = require("cors")
+// const multer = require("multer")
+// const upload = multer()
 
 const OPERATE = Sequelize.Op
 
@@ -17,6 +20,8 @@ const liveList = []
 const app = express()
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
+app.use(bodyParser.text())
+app.use(cors())
 
 // 建立数据库
 const sequelize = new Sequelize(config.database, config.user, config.password, {
@@ -49,7 +54,8 @@ sequelize.sync({ force: true }).then((res) => {
 
         User.create({
             id: "test",
-            channelName: "东北大学电视台"
+            channelName: "东北大学电视台",
+            authority: 3
         }).then(() => {
             DatedLive.create({
                 title: "东北大学95周年校庆",
@@ -104,7 +110,7 @@ app.post("/liveDone", (req, res) => {
     for (let i = 0, len = liveList.length; i < len; i++) {
         let live = liveList[i].get({ plain: true })
         if (req.body.name === live.userId && req.body.key === live.key) {
-            liveList[i].update({ isLive: false}).catch((err) => {
+            liveList[i].update({ isLive: false }).catch((err) => {
                 throw new Error(err)
             })
             liveList.splice(i, 1)
@@ -128,4 +134,33 @@ app.post("/addAdmin", (req, res) => {
 
 app.post("/checkLive", (req, res) => {
 
+})
+
+app.post("/login", (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password
+        },
+        include: [DatedLive]
+    }).then((user) => {
+        let response
+        if (user) {
+            response = {
+                isSuccess: true,
+                err: ""
+            }
+        } else {
+            response = {
+                isSuccess: false,
+                err: "账号ID或者密码错误"
+            }
+        }
+        res.status(200).json(response)
+        res.end()
+    })
 })
