@@ -3,8 +3,8 @@ import React from "react"
 import reactDOM from "react-dom"
 import { Transition } from "react-transition-group"
 import CssBaseline from '@material-ui/core/CssBaseline'
-
 import LoginPage from "./pages/LoginPage.jsx"
+import AdminPage from "./pages/AdminPage.jsx"
 
 const duration = 500
 
@@ -43,22 +43,36 @@ class App extends Component {
                         </div>
                     )}
                 </Transition>
+                <AdminPage showLoginPage={this.showLoginPage}/>
             </React.Fragment>
         )
     }
 
     constructor(props) {
         super(props)
-
-        this.state = {
-            isLoginHide: false
+        let user = sessionStorage.getItem("user")
+        if (user) {
+            this.state = {
+                isLoginHide: true
+            }
+        } else {
+            this.state = {
+                isLoginHide: false
+            }
         }
+        
         this.hideLoginPage = this.hideLoginPage.bind(this)
+        this.showLoginPage = this.showLoginPage.bind(this)
     }
 
     hideLoginPage() {
         this.setState({
             isLoginHide: true
+        })
+    }
+    showLoginPage() {
+        this.setState({
+            isLoginHide: false
         })
     }
 }
