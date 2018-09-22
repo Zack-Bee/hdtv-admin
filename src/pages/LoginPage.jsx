@@ -17,7 +17,6 @@ import config from "../../config/config"
 import post from "../utils/post"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 
-
 const theme = createMuiTheme({
     palette: {
         primary: {
@@ -207,7 +206,7 @@ class LoginPage extends Component {
         })
         let id = this.state.id,
             password = this.state.password
-        post(config.loginUrl, JSON.stringify({
+        post(config.httpHost + config.loginRouter, JSON.stringify({
             id,
             password
         })).then((res) => {
@@ -221,7 +220,8 @@ class LoginPage extends Component {
                 })
                 sessionStorage.setItem("user", JSON.stringify({
                     id,
-                    password
+                    password,
+                    authority: data.authority
                 }))
                 this.props.hideLoginPage()
             } else {

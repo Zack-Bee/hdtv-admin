@@ -33,6 +33,22 @@ module.exports = (sequelize, DataTypes) => (
         },
         channelName: {
             type: DataTypes.STRING
+        },
+        isLive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        key: {
+            type: DataTypes.STRING,
+            defaultValue: ""
+        },
+        title: {
+            type: DataTypes.STRING,
+            defaultValue: ""
+        },
+        createdBy: {
+            type: DataTypes.STRING,
+            defaultValue: ""
         }
     })
 )

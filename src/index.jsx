@@ -43,7 +43,7 @@ class App extends Component {
                         </div>
                     )}
                 </Transition>
-                <AdminPage showLoginPage={this.showLoginPage}/>
+                {this.state.isLoginHide && <AdminPage showLoginPage={this.showLoginPage}/>}
             </React.Fragment>
         )
     }

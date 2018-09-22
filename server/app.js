@@ -5,11 +5,9 @@ const express = require("express")
 const bodyParser = require("body-parser")
 const Sequelize = require("sequelize")
 const path = require("path")
-const config = require("../config/admin")
-const formatDate = require("./utils/formatDate")
+const mysqlConfig = require("../config/admin")
 const cors = require("cors")
-// const multer = require("multer")
-// const upload = multer()
+const hostConfig = require("../config/config")
 
 const OPERATE = Sequelize.Op
 
@@ -24,48 +22,26 @@ app.use(bodyParser.text())
 app.use(cors())
 
 // 建立数据库
-const sequelize = new Sequelize(config.database, config.user, config.password, {
-    host: config.host,
-    dialect: "mysql",
-    pool: {
-        max: 5,
-        min: 0,
-        idle: 10000
-    }
-})
-const DatedLive = sequelize.import(path.resolve(__dirname, "./models/DatedLive.js"))
-const Live = sequelize.import(path.resolve(__dirname, "./models/Live.js"))
+const sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.user,
+    mysqlConfig.password, {
+        host: mysqlConfig.host,
+        dialect: "mysql",
+        pool: {
+            max: 5,
+            min: 0,
+            idle: 10000
+        }
+    })
 const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
-
-User.hasMany(DatedLive)
-DatedLive.belongsTo(User)
 
 // 同步数据库
 sequelize.sync({ force: true }).then((res) => {
     console.log("同步数据库完成!")
-    DatedLive.findAll({
-        where: {
-            isLive: true
-        }
-    }).then((res) => {
-        liveList.push(...res)
-        console.log("当前正在直播的列表:")
-        console.log(liveList)
 
-        User.create({
-            id: "test",
-            channelName: "东北大学电视台",
-            authority: 3
-        }).then(() => {
-            DatedLive.create({
-                title: "东北大学95周年校庆",
-                userId: "test",
-                isLive: false,
-                isChecked: true,
-                key: "1234",
-                date: new Date()
-            })
-        })
+    User.create({
+        id: "test",
+        authority: 3,
+        channelName: "测试频道"
     })
     app.listen(3000)
 }, (err) => {
@@ -76,67 +52,165 @@ sequelize.sync({ force: true }).then((res) => {
 // 推流认证路由
 app.post("/authorize", (req, res) => {
     console.log(req.body)
-    DatedLive.findOne({
-        where: {
-            date: new Date(),
-            isLive: false,
-            isChecked: true,
-            userId: req.body.name,
-            key: req.body.key
-        },
-        include: [User]
-    }).then((live) => {
-        if (live) {
-            console.log("推流认证成功:\n", req.body.name)
-            live.update({
-                isLive: true
-            }).then(() => {
-                console.log(live.get({ plain: true }))
-                liveList.push(live)
-                res.sendStatus(200)
-            })
-        } else {
-            console.log("推流认证失败:\n", req.body.name)
-            res.sendStatus(401)
-        }
-    }, (err) => {
-        console.log("查询认证信息失败!")
-        throw new Error(err)
-    })
+
 })
 
 // 节目推流完毕后从liveList中删除
 app.post("/liveDone", (req, res) => {
-    for (let i = 0, len = liveList.length; i < len; i++) {
-        let live = liveList[i].get({ plain: true })
-        if (req.body.name === live.userId && req.body.key === live.key) {
-            liveList[i].update({ isLive: false }).catch((err) => {
-                throw new Error(err)
-            })
-            liveList.splice(i, 1)
-            console.log("推流完成:\n", req.body.name)
-            break
-        }
+
+})
+
+// 添加用户
+app.post(hostConfig.addUserRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
     }
+    if (!info.userId || !info.userPassword || !info.userChannelName) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password,
+            authority: {
+                [OPERATE.or]: [2, 3]
+            }
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.findOne({
+                where: {
+                    id: info.userId
+                }
+            }).then((newUser) => {
+                if (newUser) {
+                    res.status(200).json({
+                        isSuccess: false,
+                        err: "该用户ID已经存在"
+                    })
+                } else {
+                    res.status(200).json({
+                        isSuccess: true,
+                        err: ""
+                    })
+                    User.create({
+                        id: info.userId,
+                        password: info.userPassword,
+                        channelName: info.channelName,
+                        authority: 1,
+                        createdBy: user.get({ plain }).id
+                    })
+                }
+            })
+        }
+    })
 })
 
-app.post("/dateLive", (req, res) => {
+// 添加管理员
+app.post(hostConfig.addAdminRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    if (!info.userId || !info.userPassword) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password,
+            authority: 3
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.findOne({
+                where: {
+                    id: info.userId
+                }
+            }).then((newUser) => {
+                if (newUser) {
+                    res.status(200).json({
+                        isSuccess: false,
+                        err: "该用户ID已经存在"
+                    })
+                } else {
+                    res.status(200).json({
+                        isSuccess: true,
+                        err: ""
+                    })
+                    User.create({
+                        id: info.userId,
+                        password: info.userPassword,
+                        authority: 2,
+                        createdBy: user.get({ plain }).id
+                    })
+                }
+            })
+        }
+    })
+})
+
+// 删除用户
+app.post(hostConfig.deleteUserRouter, (req, res) => {
 
 })
 
-app.post("/addUser", (req, res) => {
+// 删除管理员
+app.post(hostConfig.deleteAdminRouter, (req, res) => {
 
 })
 
-app.post("/addAdmin", (req, res) => {
-
+// 修改密码
+app.post(hostConfig.changePasswordRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    if (info.password.length <= 5) {
+        res.status(200).json({
+            isSuccess: false,
+            err: "新密码密码长度未超过5位"
+        })
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password
+        }
+    }).then((user) => {
+        let response
+        if (user) {
+            response = {
+                isSuccess: true,
+                err: ""
+            }
+            user.update({
+                password: info.newPassword
+            })
+        } else {
+            response = {
+                isSuccess: false,
+                err: "用户认证失败, 请确定你已登陆"
+            }
+        }
+        res.status(200).json(response)
+    })
 })
 
-app.post("/checkLive", (req, res) => {
-
-})
-
-app.post("/login", (req, res) => {
+// 登陆账号
+app.post(hostConfig.loginRouter, (req, res) => {
     let info = JSON.parse(req.body)
     if (!info) {
         return
@@ -146,13 +220,13 @@ app.post("/login", (req, res) => {
             id: info.id,
             password: info.password
         },
-        include: [DatedLive]
     }).then((user) => {
         let response
         if (user) {
             response = {
                 isSuccess: true,
-                err: ""
+                err: "",
+                authority: user.get({ plain: true }).authority
             }
         } else {
             response = {

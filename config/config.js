@@ -6,6 +6,18 @@ module.exports =  {
     // 推流直播的基本地址
     baseLiveUrl: "rtmp://202.118.1.139:8080/neu/",
 
-    // 登陆的地址
-    loginUrl: "http://127.0.0.1:3000/login"
+    // http主机地址
+    httpHost: "http://127.0.0.1:3000",
+
+    loginRouter: "/login",
+
+    deleteUserRouter: "/deleteUser",
+
+    deleteAdminRouter: "/deleteAdmin",
+
+    addUserRouter: "/addUser",
+
+    addAdminRouter: "/addAdmin",
+
+    changePasswordRouter: "/changePassword"
 }
