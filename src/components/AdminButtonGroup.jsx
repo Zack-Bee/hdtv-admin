@@ -8,6 +8,9 @@ import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
+import post from "../utils/post"
+import config from "../../config/config"
+import ColorSnackbar from "../components/ColorSnackbar.jsx"
 
 const styles = (theme) => ({
     buttonWrapper: {
@@ -55,7 +58,7 @@ class AdminButtonGroup extends Component {
                             defaultValue={this.state.userChannelName}
                         />
                         <TextField margin="dense" label="密码"
-                            onChange={this.setUserChannelName} 
+                            onChange={this.setUserPassword} 
                             type="password" fullWidth
                             defaultValue={this.state.userPassword}
                         />
@@ -64,7 +67,7 @@ class AdminButtonGroup extends Component {
                         <Button onClick={this.closeCreateUserForm} color="primary">
                             取消
                         </Button>
-                        <Button onClick={this.setAdminPassword} color="primary">
+                        <Button onClick={this.createUser} color="primary">
                             创建用户
                         </Button>
                     </DialogActions>
@@ -78,11 +81,11 @@ class AdminButtonGroup extends Component {
                         <DialogContentText>
                         </DialogContentText>
                         <TextField margin="dense" label="用户ID"
-                            onChange={this.setNewPassword}
+                            onChange={this.setAdminId}
                             type="text" fullWidth
                         />
                         <TextField margin="dense" label="确认新密码"
-                            onChange={this.setNewPasswordAgain} 
+                            onChange={this.setAdminPassword} 
                             type="password" fullWidth
                         />
                     </DialogContent>
@@ -90,11 +93,16 @@ class AdminButtonGroup extends Component {
                         <Button onClick={this.closeCreateAdminForm} color="primary">
                             取消
                         </Button>
-                        <Button onClick={this.changePassword} color="primary">
+                        <Button onClick={this.createAdmin} color="primary">
                             创建管理员
                         </Button>
                     </DialogActions>
                 </Dialog>
+                <ColorSnackbar type={this.state.snackbarType} 
+                    message={this.state.snackbarMessage} autoHideDuration={4000}
+                    onClose={this.closeSnackbar} 
+                    open={this.state.isSnackbarOpen}
+                />
             </div>
         )
     }
@@ -109,7 +117,10 @@ class AdminButtonGroup extends Component {
             userPassword: "",
             userChannelName: "",
             adminId: "",
-            adminPassword: ""
+            adminPassword: "",
+            snackbarType: "error",
+            snackbarMessage: "",
+            isSnackbarOpen: false
         }
 
         this.openCreateUserForm = this.openCreateUserForm.bind(this)
@@ -121,9 +132,118 @@ class AdminButtonGroup extends Component {
         this.setUserPassword = this.setUserPassword.bind(this)
         this.setAdminPassword = this.setAdminPassword.bind(this)
         this.setUserChannelName = this.setUserChannelName.bind(this)
+        this.closeSnackbar = this.closeSnackbar.bind(this)
+        this.createUser = this.createUser.bind(this)
+        this.createAdmin = this.createAdmin.bind(this)
     }
+
+    closeSnackbar() {
+        this.setState({
+            isSnackbarOpen: false
+        })
+    }
+
+    createUser() {
+        let userId = this.state.userId,
+            userPassword = this.state.userPassword,
+            userChannelName = this.state.userChannelName,
+            user = JSON.parse(sessionStorage.getItem("user"))
+        if (!userId) {
+            this.setState({
+                isSnackbarOpen: true,
+                snackbarType: "warning",
+                snackbarMessage: "ID不能为空"
+            })
+            return
+        }
+        if (userPassword.length <= 5) {
+            this.setState({
+                isSnackbarOpen: true,
+                snackbarType: "warning",
+                snackbarMessage: "密码长度必须超过5位"
+            })
+            return
+        }
+        if (!userChannelName) {
+            this.setState({
+                isSnackbarOpen: true,
+                snackbarType: "warning",
+                snackbarMessage: "频道名称不能为空"
+            })
+            return
+        }
+        post(config.httpHost + config.addUserRouter, JSON.stringify({
+            id: user.id,
+            password: user.password,
+            userId,
+            userPassword,
+            userChannelName
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarType: "success",
+                    snackbarMessage: "创建用户成功",
+                    isCreateUserFormOpen: false
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarType: "error",
+                    snackbarMessage: data.err
+                })
+            }
+        })
+    }
+
+    createAdmin() {
+        let userId = this.state.adminId,
+            userPassword = this.state.adminPassword,
+            user = JSON.parse(sessionStorage.getItem("user"))
+        if (!userId) {
+            this.setState({
+                isSnackbarOpen: true,
+                snackbarType: "warning",
+                snackbarMessage: "ID不能为空"
+            })
+            return
+        }
+        if (userPassword.length <= 5) {
+            this.setState({
+                isSnackbarOpen: true,
+                snackbarType: "warning",
+                snackbarMessage: "密码长度必须超过5位"
+            })
+            return
+        }
+        post(config.httpHost + config.addAdminRouter, JSON.stringify({
+            id: user.id,
+            password: user.password,
+            userId,
+            userPassword,
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarType: "success",
+                    snackbarMessage: "创建管理员成功",
+                    isCreateAdminFormOpen: false
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarType: "error",
+                    snackbarMessage: data.err
+                })
+            }
+        })
+    }
+
     setUserId(event) {
-        console.log(event.target.value)
         this.setState({
             userId: event.target.value
         })

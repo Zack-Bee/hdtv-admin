@@ -8,6 +8,7 @@ const path = require("path")
 const mysqlConfig = require("../config/admin")
 const cors = require("cors")
 const hostConfig = require("../config/config")
+const generateKey = require("./utils/generateKey")
 
 const OPERATE = Sequelize.Op
 
@@ -102,9 +103,11 @@ app.post(hostConfig.addUserRouter, (req, res) => {
                     User.create({
                         id: info.userId,
                         password: info.userPassword,
-                        channelName: info.channelName,
+                        channelName: info.userChannelName,
                         authority: 1,
-                        createdBy: user.get({ plain }).id
+                        createdBy: user.get({ plain: true }).id,
+                        key: generateKey(),
+                        title: "测试"
                     })
                 }
             })
@@ -153,7 +156,7 @@ app.post(hostConfig.addAdminRouter, (req, res) => {
                         id: info.userId,
                         password: info.userPassword,
                         authority: 2,
-                        createdBy: user.get({ plain }).id
+                        createdBy: user.get({ plain: true }).id
                     })
                 }
             })
