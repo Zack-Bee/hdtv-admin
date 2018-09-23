@@ -31,7 +31,7 @@ const styles = (theme) => ({
 
 class AdminBar extends Component {
     render() {
-        const { classes } = this.props
+        const { classes, authority } = this.props
         const { anchorEl } = this.state
         const open = Boolean(anchorEl)
         return (
@@ -39,7 +39,9 @@ class AdminBar extends Component {
                 <AppBar color="primary" position="static">
                     <Toolbar>
                         <Typography variant="title" color="inherit" className={classes.grow}>
-                            {this.props.title}
+                            {
+                                authority >= 2 ? "你好管理员" : this.props.title
+                            }
                         </Typography>
                         <IconButton
                             aria-owns={open ? 'menu-appbar' : null}

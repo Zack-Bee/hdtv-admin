@@ -295,10 +295,12 @@ app.post(hostConfig.loginRouter, (req, res) => {
     }).then((user) => {
         let response
         if (user) {
+            user = user.get({ plain: true })
             response = {
                 isSuccess: true,
                 err: "",
-                authority: user.get({ plain: true }).authority
+                authority: user.authority,
+                channelName: user.channelName
             }
         } else {
             response = {
@@ -396,6 +398,36 @@ app.post(hostConfig.adminListRouter, (req, res) => {
                     err: "",
                     list
                 })
+            })
+        }
+    })
+})
+
+app.post(hostConfig.liveDetailRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password,
+            authority: 1
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            user = user.get({ plain: true })
+            res.status(200).json({
+                isSuccess: true,
+                err: "",
+                title: user.title,
+                key: user.key,
+                updateAt: user.updateAt
             })
         }
     })

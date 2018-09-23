@@ -221,7 +221,8 @@ class LoginPage extends Component {
                 sessionStorage.setItem("user", JSON.stringify({
                     id,
                     password,
-                    authority: data.authority
+                    authority: data.authority,
+                    channelName: data.channelName
                 }))
                 this.props.hideLoginPage()
             } else {

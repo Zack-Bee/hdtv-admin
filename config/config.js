@@ -1,4 +1,5 @@
 module.exports =  {
+    hdtvLiveBaseUrl: "https://hdtv.neu6.edu.cn/v1/live/",
 
     // .m3u8的基本地址
     baseHlsUlr: "202.118.1.139:8080/hls/",
@@ -31,5 +32,8 @@ module.exports =  {
     userListRouter: "/userList",
 
     // 得到管理员列表
-    adminListRouter: "/adminList"
+    adminListRouter: "/adminList",
+
+    // 得到直播的详细信息
+    liveDetailRouter: "/liveDetail"
 }

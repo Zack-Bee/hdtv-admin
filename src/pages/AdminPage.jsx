@@ -8,12 +8,18 @@ import AdminBar from "../components/AdminBar.jsx"
 import AdminButtonGroup from "../components/AdminButtonGroup.jsx"
 import post from "../utils/post";
 import config from "../../config/config"
+import LiveCard from "../components/LiveCard.jsx"
 
 const styles = (theme) => ({
     root: {
         flexGrow: 1,
     },
     buttonWrapper: {
+        display: "flex",
+        justifyContent: "space-around",
+        margin: "30px 0"
+    },
+    cardWrapper: {
         display: "flex",
         justifyContent: "space-around",
         margin: "30px 0"
@@ -45,19 +51,25 @@ const adminTableHeads = [
 class AdminPage extends Component {
     render() {
         const { classes } = this.props
-        const { authority } = this.state
+        const { authority, channelName } = this.state
         return (
             <div className={classes.root}>
                 <MuiThemeProvider theme={theme}>
                     <AdminBar title={this.state.channelName} 
                         userId={this.state.userId} 
                         showLoginPage={this.props.showLoginPage}
+                        authority={authority} channelName={channelName}
                     />
-                    <AdminButtonGroup authority={authority} 
+                    { authority !== 1 && <AdminButtonGroup authority={authority} 
                         freshAdminList={this.freshAdminList}
                         freshUserList={this.freshUserList}
-                    />
+                    />}
                 </MuiThemeProvider>
+                {authority === 1 &&
+                    <div className={classes.cardWrapper}>
+                        <LiveCard />
+                    </div>
+                }
                 {authority >= 2 &&
                     <DataTable title="用户列表" tableHeads={userTableHeads}
                         selected={this.state.selectedUser}
@@ -91,9 +103,9 @@ class AdminPage extends Component {
         super(props)
 
         let user = JSON.parse(sessionStorage.getItem("user"))
-        console.log(user)
         this.state = {
-            userId: "张三",
+            userId: user.id,
+            channelName: user.channelName,
             userList: [],
             adminList: [],
             selectedUser: [],
@@ -102,7 +114,6 @@ class AdminPage extends Component {
             isCreateUserFormOpen: false,
             isCreateAdminFormOpen: false,
             isCreateNewLiveFormOpen: false,
-            channelName: "东大电视台",
             isSnackbarOpen: false,
             snackbarMessage: "",
             snackbarType: "error"
@@ -122,8 +133,12 @@ class AdminPage extends Component {
     }
 
     componentDidMount() {
-        this.freshUserList()
-        this.freshAdminList()
+        if (this.state.authority >= 2) {
+            this.freshUserList()
+        }
+        if (this.state.authority === 3) {
+            this.freshAdminList()
+        }
     }
 
     deleteUser() {
