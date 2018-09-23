@@ -31,7 +31,8 @@ const sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.user,
             max: 5,
             min: 0,
             idle: 10000
-        }
+        },
+        timezone: "+08:00"
     })
 const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 
@@ -96,10 +97,6 @@ app.post(hostConfig.addUserRouter, (req, res) => {
                         err: "该用户ID已经存在"
                     })
                 } else {
-                    res.status(200).json({
-                        isSuccess: true,
-                        err: ""
-                    })
                     User.create({
                         id: info.userId,
                         password: info.userPassword,
@@ -108,6 +105,11 @@ app.post(hostConfig.addUserRouter, (req, res) => {
                         createdBy: user.get({ plain: true }).id,
                         key: generateKey(),
                         title: "测试"
+                    }).then(() => {
+                        res.status(200).json({
+                            isSuccess: true,
+                            err: ""
+                        })
                     })
                 }
             })
@@ -148,15 +150,16 @@ app.post(hostConfig.addAdminRouter, (req, res) => {
                         err: "该用户ID已经存在"
                     })
                 } else {
-                    res.status(200).json({
-                        isSuccess: true,
-                        err: ""
-                    })
                     User.create({
                         id: info.userId,
                         password: info.userPassword,
                         authority: 2,
                         createdBy: user.get({ plain: true }).id
+                    }).then(() => {
+                        res.status(200).json({
+                            isSuccess: true,
+                            err: ""
+                        })
                     })
                 }
             })
@@ -166,12 +169,76 @@ app.post(hostConfig.addAdminRouter, (req, res) => {
 
 // 删除用户
 app.post(hostConfig.deleteUserRouter, (req, res) => {
-
+    let data = JSON.parse(req.body)
+    if (!data || !(data.deleteList instanceof Array)) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: data.id,
+            password: data.password,
+            authority: {
+                [OPERATE.or]: [2, 3]
+            }
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.destroy({
+                where: {
+                    id: {
+                        [OPERATE.or]: data.deleteList
+                    },
+                    authority: 1
+                }
+            }).then(() => {
+                res.status(200).json({
+                    isSuccess: true,
+                    err: ""
+                })
+            })
+        }
+    })
 })
 
 // 删除管理员
 app.post(hostConfig.deleteAdminRouter, (req, res) => {
-
+    let data = JSON.parse(req.body)
+    if (!data || !(data.deleteList instanceof Array)) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: data.id,
+            password: data.password,
+            authority: 3
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.destroy({
+                where: {
+                    id: {
+                        [OPERATE.or]: data.deleteList
+                    },
+                    authority: 2
+                }
+            }).then(() => {
+                res.status(200).json({
+                    isSuccess: true,
+                    err: ""
+                })
+            })
+        }
+    })
 })
 
 // 修改密码
@@ -201,14 +268,16 @@ app.post(hostConfig.changePasswordRouter, (req, res) => {
             }
             user.update({
                 password: info.newPassword
+            }).then(() => {
+                res.status(200).json(response)
             })
         } else {
             response = {
                 isSuccess: false,
                 err: "用户认证失败, 请确定你已登陆"
             }
+            res.status(200).json(response)
         }
-        res.status(200).json(response)
     })
 })
 
@@ -239,5 +308,95 @@ app.post(hostConfig.loginRouter, (req, res) => {
         }
         res.status(200).json(response)
         res.end()
+    })
+})
+
+app.post(hostConfig.userListRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password,
+            authority: {
+                [OPERATE.or]: [2, 3]
+            }
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.findAll({
+                where: {
+                    authority: 1
+                }
+            }).then((users) => {
+                let list = []
+                for (let user of users) {
+                    let temp = []
+                    user = user.get({ plain: true })
+                    temp.push(user.id)
+                    temp.push(user.channelName)
+                    temp.push(user.createdAt)
+                    console.log(user.createdAt)
+
+                    temp.push(user.createdBy)
+                    list.push(temp)
+                }
+                res.status(200).json({
+                    isSuccess: true,
+                    err: "",
+                    list
+                })
+            })
+        }
+    })
+})
+
+app.post(hostConfig.adminListRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password,
+            authority: 3
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            User.findAll({
+                where: {
+                    authority: 2
+                }
+            }).then((users) => {
+                let list = []
+                for (let user of users) {
+                    let temp = []
+                    user = user.get({ plain: true })
+                    temp.push(user.id)
+                    temp.push(user.createdAt)
+                    console.log(user.createdAt)
+                    temp.push(user.createdBy)
+                    list.push(temp)
+                }
+                res.status(200).json({
+                    isSuccess: true,
+                    err: "",
+                    list
+                })
+            })
+        }
     })
 })

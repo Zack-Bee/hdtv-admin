@@ -188,6 +188,9 @@ class AdminButtonGroup extends Component {
                     snackbarMessage: "创建用户成功",
                     isCreateUserFormOpen: false
                 })
+                if (typeof this.props.freshUserList === "function") {
+                    this.props.freshUserList()
+                }
             } else {
                 this.setState({
                     isSnackbarOpen: true,
@@ -233,6 +236,9 @@ class AdminButtonGroup extends Component {
                     snackbarMessage: "创建管理员成功",
                     isCreateAdminFormOpen: false
                 })
+                if (typeof this.props.freshAdminList === "function") {
+                    this.props.freshAdminList()
+                }
             } else {
                 this.setState({
                     isSnackbarOpen: true,

@@ -26,7 +26,7 @@ class EnhancedTableHead extends React.Component {
                     <TableCell padding="checkbox">
                         <Checkbox
                             indeterminate={numSelected > 0 && numSelected < rowCount}
-                            checked={numSelected === rowCount}
+                            checked={numSelected === rowCount && numSelected > 0}
                             onChange={onSelectAllClick}
                         />
                     </TableCell>
@@ -99,7 +99,8 @@ let EnhancedTableToolbar = props => {
             <div className={classes.actions}>
                 {numSelected > 0 && (
                     <Tooltip title="删除">
-                        <IconButton aria-label="删除">
+                        <IconButton aria-label="删除" 
+                            onClick={props.onClickDelete}>
                             <DeleteIcon />
                         </IconButton>
                     </Tooltip>
@@ -132,7 +133,9 @@ class EnhancedTable extends React.Component {
 
         return (
             <Paper className={classes.root}>
-                <EnhancedTableToolbar numSelected={selected.length} title={title}/>
+                <EnhancedTableToolbar numSelected={selected.length} 
+                    title={title} onClickDelete={this.props.onClickDelete}
+                />
                 <div className={classes.tableWrapper}>
                     <Table className={classes.table} aria-labelledby="tableTitle">
                         <EnhancedTableHead

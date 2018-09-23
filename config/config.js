@@ -9,15 +9,27 @@ module.exports =  {
     // http主机地址
     httpHost: "http://127.0.0.1:3000",
 
+    // 登陆
     loginRouter: "/login",
 
+    // 删除用户
     deleteUserRouter: "/deleteUser",
 
+    // 删除管理员
     deleteAdminRouter: "/deleteAdmin",
 
+    // 添加用户
     addUserRouter: "/addUser",
 
+    // 增加管理员
     addAdminRouter: "/addAdmin",
 
-    changePasswordRouter: "/changePassword"
+    // 修改密码
+    changePasswordRouter: "/changePassword",
+
+    // 得到用户列表
+    userListRouter: "/userList",
+
+    // 得到管理员列表
+    adminListRouter: "/adminList"
 }

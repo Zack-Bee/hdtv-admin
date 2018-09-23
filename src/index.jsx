@@ -31,6 +31,8 @@ const transitionStyle = {
     }
 }
 
+console.log("%c被你发现了, 欢迎到github: https://github.com/Zack-Bee/hdtv-admin 围观", "color: #fff; font-size: 30px; background-color: #2196f3; padding: 10px; border-radius: 25px;")
+
 class App extends Component {
     render() {
         return (

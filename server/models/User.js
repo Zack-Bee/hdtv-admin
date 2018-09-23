@@ -1,3 +1,5 @@
+const moment = require("moment")
+
 /**
  * 定义user模块, 在mysql中表示为:
  * +-------------+--------------+------+-----+---------+-------+
@@ -49,6 +51,12 @@ module.exports = (sequelize, DataTypes) => (
         createdBy: {
             type: DataTypes.STRING,
             defaultValue: ""
+        },
+        createdAt: {
+            type: DataTypes.DATE,
+            get() {
+                return moment(this.getDataValue('updatedAt')).format("YYYY-MM-DD HH:mm:ss")
+            }
         }
     })
 )

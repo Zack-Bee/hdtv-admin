@@ -1,12 +1,13 @@
 import React from "react"
 import { Component } from "react"
 import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles'
-import Button from '@material-ui/core/Button'
 import blue from '@material-ui/core/colors/blue'
 import DataTable from "../components/DataTable.jsx"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import AdminBar from "../components/AdminBar.jsx"
 import AdminButtonGroup from "../components/AdminButtonGroup.jsx"
+import post from "../utils/post";
+import config from "../../config/config"
 
 const styles = (theme) => ({
     root: {
@@ -52,22 +53,36 @@ class AdminPage extends Component {
                         userId={this.state.userId} 
                         showLoginPage={this.props.showLoginPage}
                     />
-                    <AdminButtonGroup authority={authority}/>
+                    <AdminButtonGroup authority={authority} 
+                        freshAdminList={this.freshAdminList}
+                        freshUserList={this.freshUserList}
+                    />
                 </MuiThemeProvider>
                 {authority >= 2 &&
                     <DataTable title="用户列表" tableHeads={userTableHeads}
                         selected={this.state.selectedUser}
-                        rows={this.state.userList} onSelectAll={this.selectAllUser}
-                        onSelectOne={this.selectOneUser} isSelected={this.isUserSelected}
+                        rows={this.state.userList} 
+                        onSelectAll={this.selectAllUser}
+                        onSelectOne={this.selectOneUser} 
+                        isSelected={this.isUserSelected}
+                        onClickDelete={this.deleteUser}
                     />
                 }
                 {authority >= 3 &&
                     <DataTable title="管理员列表" tableHeads={adminTableHeads}
                         selected={this.state.selectedAdmin}
-                        rows={this.state.adminList} onSelectAll={this.selectAllAdmin}
-                        onSelectOne={this.selectOneAdmin} isSelected={this.isAdminSelected}
+                        rows={this.state.adminList} 
+                        onSelectAll={this.selectAllAdmin}
+                        onSelectOne={this.selectOneAdmin} 
+                        isSelected={this.isAdminSelected}
+                        onClickDelete={this.deleteAdmin}
                     />
                 }
+                <ColorSnackbar open={this.state.isSnackbarOpen}
+                    type={this.state.snackbarType} autoHideDuration={4000}
+                    onClose={this.closeSnackbar} 
+                    message={this.state.snackbarMessage}
+                />
             </div>
         )
     }
@@ -76,28 +91,11 @@ class AdminPage extends Component {
         super(props)
 
         let user = JSON.parse(sessionStorage.getItem("user"))
+        console.log(user)
         this.state = {
             userId: "张三",
-            userList: [
-                ["test0", "东北大学电视台", "2018-07-27", "admin"],
-                ["test1", "东北大学电视台", "2018-07-27", "admin"],
-                ["test2", "东北大学电视台", "2018-07-27", "admin"],
-                ["test3", "东北大学电视台", "2018-07-27", "admin"],
-                ["test4", "东北大学电视台", "2018-07-27", "admin"],
-                ["test5", "东北大学电视台", "2018-07-27", "admin"],
-                ["test6", "东北大学电视台", "2018-07-27", "admin"],
-                ["test7", "东北大学电视台", "2018-07-27", "admin"],
-            ],
-            adminList: [
-                ["zackbee1", "2018-07-27", "admin"],
-                ["zackbee2", "2018-07-27", "admin"],
-                ["zackbee3", "2018-07-27", "admin"],
-                ["zackbee4", "2018-07-27", "admin"],
-                ["zackbee5", "2018-07-27", "admin"],
-                ["zackbee6", "2018-07-27", "admin"],
-                ["zackbee7", "2018-07-27", "admin"],
-                ["zackbee8", "2018-07-27", "admin"],
-            ],
+            userList: [],
+            adminList: [],
             selectedUser: [],
             selectedAdmin: [],
             authority: user.authority,
@@ -105,6 +103,9 @@ class AdminPage extends Component {
             isCreateAdminFormOpen: false,
             isCreateNewLiveFormOpen: false,
             channelName: "东大电视台",
+            isSnackbarOpen: false,
+            snackbarMessage: "",
+            snackbarType: "error"
         }
 
         this.selectOneUser = this.selectOneUser.bind(this)
@@ -113,6 +114,122 @@ class AdminPage extends Component {
         this.selectOneAdmin = this.selectOneAdmin.bind(this)
         this.selectAllAdmin = this.selectAllAdmin.bind(this)
         this.isAdminSelected = this.isAdminSelected.bind(this)
+        this.closeSnackbar = this.closeSnackbar.bind(this)
+        this.freshAdminList = this.freshAdminList.bind(this)
+        this.freshUserList = this.freshUserList.bind(this)
+        this.deleteAdmin = this.deleteAdmin.bind(this)
+        this.deleteUser = this.deleteUser.bind(this)
+    }
+
+    componentDidMount() {
+        this.freshUserList()
+        this.freshAdminList()
+    }
+
+    deleteUser() {
+        console.log(1)
+        let user = JSON.parse(sessionStorage.getItem("user"))
+        post(config.httpHost + config.deleteUserRouter, JSON.stringify({
+            id: user.id,
+            password: user.password,
+            deleteList: this.state.selectedUser
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            console.log(data)
+            if (data.isSuccess) {
+                this.freshUserList()
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: "删除成功",
+                    snackbarType: "success",
+                    selectedUser: []
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: data.err,
+                    snackbarType: "error"
+                })
+            }
+        })
+    }
+
+    deleteAdmin() {
+        let user = JSON.parse(sessionStorage.getItem("user"))
+        post(config.httpHost + config.deleteAdminRouter, JSON.stringify({
+            id: user.id,
+            password: user.password,
+            deleteList: this.state.selectedAdmin
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.freshAdminList()
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: "删除成功",
+                    snackbarType: "success",
+                    selectedAdmin: []
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: data.err,
+                    snackbarType: "error"
+                })
+            }
+        })
+    }
+
+    closeSnackbar() {
+        this.setState({
+            isSnackbarOpen: false
+        })
+    }
+
+    freshUserList() {
+        let user = JSON.parse(sessionStorage.getItem("user"))
+        post(config.httpHost + config.userListRouter, JSON.stringify({
+            id: user.id,
+            password: user.password
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    userList: data.list
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: data.err,
+                    snackbarType: "error"
+                })
+            }
+        })
+    }
+
+    freshAdminList() {
+        let user = JSON.parse(sessionStorage.getItem("user"))
+        post(config.httpHost + config.adminListRouter, JSON.stringify({
+            id: user.id,
+            password: user.password
+        })).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    adminList: data.list
+                })
+            } else {
+                this.setState({
+                    isSnackbarOpen: true,
+                    snackbarMessage: data.err,
+                    snackbarType: "error"
+                })
+            }
+        })
     }
 
     selectOneUser(event, id) {
