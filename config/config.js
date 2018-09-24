@@ -5,7 +5,7 @@ module.exports =  {
     baseHlsUlr: "202.118.1.139:8080/hls/",
 
     // 推流直播的基本地址
-    baseLiveUrl: "rtmp://202.118.1.139:8080/neu/",
+    baseLiveUrl: "rtmp://202.118.1.139:1935/neu/",
 
     // http主机地址
     httpHost: "http://127.0.0.1:3000",
@@ -35,5 +35,8 @@ module.exports =  {
     adminListRouter: "/adminList",
 
     // 得到直播的详细信息
-    liveDetailRouter: "/liveDetail"
+    liveDetailRouter: "/liveDetail",
+
+    // 修改直播的标题
+    chnageLiveTitleRouter: "/changeLiveTitle"
 }

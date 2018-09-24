@@ -37,13 +37,23 @@ const sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.user,
 const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 
 // 同步数据库
-sequelize.sync({ force: true }).then((res) => {
+sequelize.sync({ force: false }).then((res) => {
     console.log("同步数据库完成!")
 
-    User.create({
-        id: "test",
-        authority: 3,
-        channelName: "测试频道"
+    // User.create({
+    //     id: "test",
+    //     authority: 3,
+    //     channelName: "测试频道"
+    // })
+    User.findOrCreate({
+        where: {
+            id: "test",
+            authority: 3,
+            channelName: "测试频道"
+        },
+        defaults: {
+            password: "123456"
+        }
     })
     app.listen(3000)
 }, (err) => {
@@ -53,13 +63,30 @@ sequelize.sync({ force: true }).then((res) => {
 
 // 推流认证路由
 app.post("/authorize", (req, res) => {
-    console.log(req.body)
-
+    let info = req.body
+    console.log(info)
+    User.findOne({
+        where: {
+            id: info.name,
+            key: info.key,
+            authority: 1
+        }
+    }).then((user) => {
+        console.log(typeof user)
+        if (user) {
+            res.sendStatus(200)
+            user.update({
+                isLive: true
+            })
+        } else {
+            res.sendStatus(403)
+        }
+    })
 })
 
 // 节目推流完毕后从liveList中删除
 app.post("/liveDone", (req, res) => {
-
+    console.log("live done")
 })
 
 // 添加用户
@@ -429,6 +456,41 @@ app.post(hostConfig.liveDetailRouter, (req, res) => {
                 key: user.key,
                 updateAt: user.updateAt
             })
+        }
+    })
+})
+
+app.post(hostConfig.chnageLiveTitleRouter, (req, res) => {
+    let info = JSON.parse(req.body)
+    if (!info || !info.newTitle) {
+        return
+    }
+    User.findOne({
+        where: {
+            id: info.id,
+            password: info.password
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status(200).json({
+                isSuccess: false,
+                err: "用户认证失败, 请确认你的权限足够"
+            })
+        } else {
+            if (info.newTitle.length === 0) {
+                res.status(200).json({
+                    isSuccess: false,
+                    err: "标题不能为空"
+                })
+            } else {
+                res.status(200).json({
+                    isSuccess: true,
+                    err: ""
+                })
+                user.update({
+                    title: info.newTitle
+                })
+            }
         }
     })
 })
