@@ -258,7 +258,7 @@ class LiveCard extends React.Component {
                 this.setState({
                     isSnackbarOpen: true,
                     snackbarType: "success",
-                    snackbarMessage: "修改标题成功",
+                    snackbarMessage: "修改标题成功, 推流地址等信息已经刷新",
                     isChangeTitleFormOpen: false
                 })
             }

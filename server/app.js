@@ -488,7 +488,8 @@ app.post(hostConfig.chnageLiveTitleRouter, (req, res) => {
                     err: ""
                 })
                 user.update({
-                    title: info.newTitle
+                    title: info.newTitle,
+                    key: generateKey()
                 })
             }
         }
