@@ -4,19 +4,46 @@
 const express = require("express")
 const bodyParser = require("body-parser")
 const Sequelize = require("sequelize")
+const session = require('express-session')
+const cookieParser = require('cookie-parser')
 const path = require("path")
 const mysqlConfig = require("../config/admin")
 const cors = require("cors")
 const hostConfig = require("../config/config")
 const generateKey = require("./utils/generateKey")
+const MemoryStore = require('session-memory-store')(session)
+const ConnectCas = require('connect-cas2')
 
 const OPERATE = Sequelize.Op
 
 // 将正在播放的列表存储在内存中, 用于减少mysql的负载
 const liveList = []
+const casClient = new ConnectCas({
+    servicePrefix: 'http://http://v.neu6.edu.cn:3000',
+    serverPath: 'https://sso.neu.cn',
+    paths: {
+        validate: '/cas/validate',
+        serviceValidate: '/cas/serviceValidate',
+        proxy: '/cas/proxy',
+        login: '/cas/login',
+        logout: '/cas/logout',
+        proxyCallback: '/cas/proxyCallback',
+        redirect: false,
+        gateway: false,
+        renew: false,
+        slo: true,
+    },
+})
 
 // 使用中间件
 const app = express()
+app.use(cookieParser())
+app.use(session({
+    name: "HDTV_SESSION",
+    secret: "HDTV_ADMIN_SESSION",
+    store: new MemoryStore()
+}))
+app.use(casClient.core())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 app.use(bodyParser.text())
@@ -60,6 +87,12 @@ sequelize.sync({ force: false }).then((res) => {
     console.log("同步数据库失败!")
     throw new Error(err)
 })
+
+// 访问管理界面
+app.get("/", (req, res) => {
+    console.log(req.session)
+})
+
 
 // 推流认证路由
 app.post("/authorize", (req, res) => {
