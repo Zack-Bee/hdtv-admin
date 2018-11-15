@@ -1,4 +1,23 @@
+// 设置是否每个人都能直播
+let isEveryOneCanLive = true
+
 module.exports =  {
+
+    // 得到是否每个人都能直播的设置
+    getIsEveryOneCanLive() {
+        return isEveryOneCanLive
+    },
+
+    // 允许每个人都能直播, 此时只有黑名单内的用户不能直播
+    allowEveryOneLive() {
+        isEveryOneCanLive = true
+    },
+
+    // 禁止每个人都能直播, 此时只有白名单内的用户能够直播
+    forbidEveryOneLive() {
+        isEveryOneCanLive = false
+    },
+
     hdtvLiveBaseUrl: "https://hdtv.neu6.edu.cn/v1/live/",
 
     // .m3u8的基本地址
@@ -9,30 +28,6 @@ module.exports =  {
 
     // http主机地址
     httpHost: "http://127.0.0.1:3000",
-
-    // 登陆
-    loginRouter: "/login",
-
-    // 删除用户
-    deleteUserRouter: "/deleteUser",
-
-    // 删除管理员
-    deleteAdminRouter: "/deleteAdmin",
-
-    // 添加用户
-    addUserRouter: "/addUser",
-
-    // 增加管理员
-    addAdminRouter: "/addAdmin",
-
-    // 修改密码
-    changePasswordRouter: "/changePassword",
-
-    // 得到用户列表
-    userListRouter: "/userList",
-
-    // 得到管理员列表
-    adminListRouter: "/adminList",
 
     // 得到直播的详细信息
     liveDetailRouter: "/liveDetail",

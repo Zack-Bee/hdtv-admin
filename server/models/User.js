@@ -22,21 +22,18 @@ module.exports = (sequelize, DataTypes) => (
             },
             primaryKey: true
         },
-        password: {
-            type: DataTypes.STRING,
-            validate: {
-                isAlphanumeric: true
-            },
-            defaultValue: "123456"
-        },
-        authority: {
-            type: DataTypes.INTEGER,
-            defaultValue: 1
-        },
         channelName: {
             type: DataTypes.STRING
         },
         isLive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        isInBlackList: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        },
+        isInWhiteList: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
         },
@@ -47,22 +44,6 @@ module.exports = (sequelize, DataTypes) => (
         title: {
             type: DataTypes.STRING,
             defaultValue: ""
-        },
-        createdBy: {
-            type: DataTypes.STRING,
-            defaultValue: ""
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            get() {
-                return moment(this.getDataValue('updatedAt')).format("YYYY-MM-DD HH:mm:ss")
-            }
-        },
-        updateAt: {
-            type: DataTypes.DATE,
-            get() {
-                return moment(this.getDataValue('updatedAt')).format("YYYY-MM-DD HH:mm:ss")
-            }
         }
     })
 )

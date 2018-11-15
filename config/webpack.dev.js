@@ -30,7 +30,7 @@ const config = merge(common, {
         }]
     },
     devServer: {
-        host: "127.0.0.1",
+        host: "0.0.0.0",
         open: true,
         historyApiFallback: {
             index: "/index.html"
@@ -41,7 +41,8 @@ const config = merge(common, {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
-        }
+        },
+        disableHostCheck: true,
     },
     plugins: [
         new webpack.HotModuleReplacementPlugin()

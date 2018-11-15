@@ -1,5 +1,6 @@
 node_modules
 config/admin.js
 config/redis.conf
+config/mysql.js
 test.*
 .vscode
