@@ -1,4 +1,5 @@
 const moment = require("moment")
+const generateKey = require("../utils/generateKey")
 
 /**
  * 定义user模块, 在mysql中表示为:
@@ -23,7 +24,8 @@ module.exports = (sequelize, DataTypes) => (
             primaryKey: true
         },
         channelName: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            defaultValue: ""
         },
         isLive: {
             type: DataTypes.BOOLEAN,
@@ -39,11 +41,11 @@ module.exports = (sequelize, DataTypes) => (
         },
         key: {
             type: DataTypes.STRING,
-            defaultValue: ""
+            defaultValue: generateKey()
         },
         title: {
             type: DataTypes.STRING,
-            defaultValue: ""
+            defaultValue: "测试频道"
         }
     })
 )

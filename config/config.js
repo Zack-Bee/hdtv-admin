@@ -33,5 +33,32 @@ module.exports =  {
     liveDetailRouter: "/liveDetail",
 
     // 修改直播的标题
-    chnageLiveTitleRouter: "/changeLiveTitle"
+    chnageLiveTitleRouter: "/changeLiveTitle",
+
+    // 获取黑名单
+    blackListRouter: "/blackList",
+
+    // 添加用户到黑名单
+    addUserToBlackListRouter: "/addUserToBlackList",
+
+    // 从黑名单中删除用户
+    deleteUserFromBlackListRouter: "/deleteUserFromBlackList",
+
+    // 获取白名单
+    whiteListRouter: "whiteList",
+
+    // 添加用户到白名单
+    addUserToWhiteListRouter: "addUserToWhiteList",
+
+    // 从白名单中删除用户
+    deleteUserFromWhiteListRouter: "deleteUserFromWhiteList",
+
+    // 设置允许每个人都直播
+    allowEveryOneLiveRouter: "allowEveryOneLive",
+
+    // 设置禁止每个人都直播
+    forbidEveryOneLiveRouter: "forbidEveryOneLive",
+
+    // 退出登陆
+    logoutRouter: "logout"
 }

@@ -7,32 +7,27 @@ const Sequelize = require("sequelize")
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
 const path = require("path")
-const mysqlConfig = require("../config/admin")
+const mysqlConfig = require("../config/mysql")
 const cors = require("cors")
 const hostConfig = require("../config/config")
 const generateKey = require("./utils/generateKey")
 const MemoryStore = require('session-memory-store')(session)
-const ConnectCas = require('connect-cas2')
-
+const CASAuthentication = require('cas-authentication')
+const { getIsEveryOneCanLive, allowEveryOneLive, forbidEveryOneLive} = require("../config/config")
 const OPERATE = Sequelize.Op
+const { adminList } = require("../config/admin")
 
 // 将正在播放的列表存储在内存中, 用于减少mysql的负载
 const liveList = []
-const casClient = new ConnectCas({
-    servicePrefix: 'http://http://v.neu6.edu.cn:3000',
-    serverPath: 'https://sso.neu.cn',
-    paths: {
-        validate: '/cas/validate',
-        serviceValidate: '/cas/serviceValidate',
-        proxy: '/cas/proxy',
-        login: '/cas/login',
-        logout: '/cas/logout',
-        proxyCallback: '/cas/proxyCallback',
-        redirect: false,
-        gateway: false,
-        renew: false,
-        slo: true,
-    },
+const cas = new CASAuthentication({
+    cas_url: "https://sso.neu.cn/cas",
+    service_url: "http://localhost:3000",
+    cas_version: "2.0",
+    renew: false,
+    is_dev_mode: false,
+    dev_mode_info: {},
+    session_name: "ID",
+    destroy_session: true
 })
 
 // 使用中间件
@@ -41,9 +36,10 @@ app.use(cookieParser())
 app.use(session({
     name: "HDTV_SESSION",
     secret: "HDTV_ADMIN_SESSION",
-    store: new MemoryStore()
+    store: new MemoryStore(),
+    resave: false,
+    saveUninitialized: true
 }))
-app.use(casClient.core())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 app.use(bodyParser.text())
@@ -65,54 +61,48 @@ const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 
 // 同步数据库
 sequelize.sync({ force: false }).then((res) => {
-    console.log("同步数据库完成!")
-
-    // User.create({
-    //     id: "test",
-    //     authority: 3,
-    //     channelName: "测试频道"
-    // })
-    User.findOrCreate({
-        where: {
-            id: "test",
-            authority: 3,
-            channelName: "测试频道"
-        },
-        defaults: {
-            password: "123456"
-        }
-    })
+    console.log("同步数据库成功!")
     app.listen(3000)
 }, (err) => {
     console.log("同步数据库失败!")
     throw new Error(err)
 })
 
-// 访问管理界面
-app.get("/", (req, res) => {
-    console.log(req.session)
-})
-
-
 // 推流认证路由
 app.post("/authorize", (req, res) => {
-    let info = req.body
+    const info = req.body
     console.log(info)
     User.findOne({
         where: {
             id: info.name,
-            key: info.key,
-            authority: 1
+            key: info.key
         }
     }).then((user) => {
-        console.log(typeof user)
-        if (user) {
-            res.sendStatus(200)
-            user.update({
-                isLive: true
-            })
+        if (!user) {
+            res.sendStatus(404)
         } else {
-            res.sendStatus(403)
+            const plainUser = user.get({ plain: true })
+
+            // 如果每个人都能播放的模式下, 检查是否在黑名单中
+            if (getIsEveryOneCanLive()) {
+                if (plainUser.isInBlackList) {
+                    res.sendStatus(404)
+                } else {
+                    res.sendStatus(200)
+                    user.update({
+                        isLive: true
+                    })
+                }
+            } else {
+                if (plainUser.isInWhiteList) {
+                    res.sendStatus(200)
+                    user.update({
+                        isLive: true
+                    })
+                } else {
+                    res.sendStatus(404)
+                }
+            }
         }
     })
 })
@@ -122,409 +112,69 @@ app.post("/liveDone", (req, res) => {
     console.log("live done")
 })
 
-// 添加用户
-app.post(hostConfig.addUserRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    if (!info.userId || !info.userPassword || !info.userChannelName) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password,
-            authority: {
-                [OPERATE.or]: [2, 3]
-            }
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.findOne({
-                where: {
-                    id: info.userId
-                }
-            }).then((newUser) => {
-                if (newUser) {
-                    res.status(200).json({
-                        isSuccess: false,
-                        err: "该用户ID已经存在"
-                    })
-                } else {
-                    User.create({
-                        id: info.userId,
-                        password: info.userPassword,
-                        channelName: info.userChannelName,
-                        authority: 1,
-                        createdBy: user.get({ plain: true }).id,
-                        key: generateKey(),
-                        title: "测试"
-                    }).then(() => {
-                        res.status(200).json({
-                            isSuccess: true,
-                            err: ""
-                        })
-                    })
-                }
-            })
-        }
-    })
+// 访问管理界面
+app.get("/", cas.bounce, (req, res) => {
+    console.log(req.session)
+    res.send("<html><body>helllo, world</body></html>")
 })
 
-// 添加管理员
-app.post(hostConfig.addAdminRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    if (!info.userId || !info.userPassword) {
-        return
-    }
-    User.findOne({
+app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
+    const id = req.session.ID
+    const authority = adminList.includes(id) ? 2 : 1
+    User.findOrCreate({
         where: {
-            id: info.id,
-            password: info.password,
-            authority: 3
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.findOne({
-                where: {
-                    id: info.userId
-                }
-            }).then((newUser) => {
-                if (newUser) {
-                    res.status(200).json({
-                        isSuccess: false,
-                        err: "该用户ID已经存在"
-                    })
-                } else {
-                    User.create({
-                        id: info.userId,
-                        password: info.userPassword,
-                        authority: 2,
-                        createdBy: user.get({ plain: true }).id
-                    }).then(() => {
-                        res.status(200).json({
-                            isSuccess: true,
-                            err: ""
-                        })
-                    })
-                }
-            })
-        }
-    })
-})
-
-// 删除用户
-app.post(hostConfig.deleteUserRouter, (req, res) => {
-    let data = JSON.parse(req.body)
-    if (!data || !(data.deleteList instanceof Array)) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: data.id,
-            password: data.password,
-            authority: {
-                [OPERATE.or]: [2, 3]
-            }
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.destroy({
-                where: {
-                    id: {
-                        [OPERATE.or]: data.deleteList
-                    },
-                    authority: 1
-                }
-            }).then(() => {
-                res.status(200).json({
-                    isSuccess: true,
-                    err: ""
-                })
-            })
-        }
-    })
-})
-
-// 删除管理员
-app.post(hostConfig.deleteAdminRouter, (req, res) => {
-    let data = JSON.parse(req.body)
-    if (!data || !(data.deleteList instanceof Array)) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: data.id,
-            password: data.password,
-            authority: 3
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.destroy({
-                where: {
-                    id: {
-                        [OPERATE.or]: data.deleteList
-                    },
-                    authority: 2
-                }
-            }).then(() => {
-                res.status(200).json({
-                    isSuccess: true,
-                    err: ""
-                })
-            })
-        }
-    })
-})
-
-// 修改密码
-app.post(hostConfig.changePasswordRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    if (info.password.length <= 5) {
-        res.status(200).json({
-            isSuccess: false,
-            err: "新密码密码长度未超过5位"
-        })
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password
-        }
-    }).then((user) => {
-        let response
-        if (user) {
-            response = {
-                isSuccess: true,
-                err: ""
-            }
-            user.update({
-                password: info.newPassword
-            }).then(() => {
-                res.status(200).json(response)
-            })
-        } else {
-            response = {
-                isSuccess: false,
-                err: "用户认证失败, 请确定你已登陆"
-            }
-            res.status(200).json(response)
-        }
-    })
-})
-
-// 登陆账号
-app.post(hostConfig.loginRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password
+            id
         },
-    }).then((user) => {
-        let response
-        if (user) {
-            user = user.get({ plain: true })
-            response = {
-                isSuccess: true,
-                err: "",
-                authority: user.authority,
-                channelName: user.channelName
-            }
-        } else {
-            response = {
-                isSuccess: false,
-                err: "账号ID或者密码错误"
-            }
+        defaults: {
+            channelName: id
         }
-        res.status(200).json(response)
-        res.end()
+    }).then((user) => {
+        const plainUser = user.get({ plain: true })
+        res.status(200).json({
+            isSuccess: true,
+            id,
+            key: plainUser.key,
+            channelName: plainUser.channelName,
+            title: plainUser.title,
+            authority
+        })
     })
 })
 
-app.post(hostConfig.userListRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password,
-            authority: {
-                [OPERATE.or]: [2, 3]
-            }
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.findAll({
-                where: {
-                    authority: 1
-                }
-            }).then((users) => {
-                let list = []
-                for (let user of users) {
-                    let temp = []
-                    user = user.get({ plain: true })
-                    temp.push(user.id)
-                    temp.push(user.channelName)
-                    temp.push(user.createdAt)
-                    console.log(user.createdAt)
+app.post(hostConfig.chnageLiveTitleRouter, cas.block, (req, res) => {
 
-                    temp.push(user.createdBy)
-                    list.push(temp)
-                }
-                res.status(200).json({
-                    isSuccess: true,
-                    err: "",
-                    list
-                })
-            })
-        }
-    })
 })
 
-app.post(hostConfig.adminListRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password,
-            authority: 3
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            User.findAll({
-                where: {
-                    authority: 2
-                }
-            }).then((users) => {
-                let list = []
-                for (let user of users) {
-                    let temp = []
-                    user = user.get({ plain: true })
-                    temp.push(user.id)
-                    temp.push(user.createdAt)
-                    console.log(user.createdAt)
-                    temp.push(user.createdBy)
-                    list.push(temp)
-                }
-                res.status(200).json({
-                    isSuccess: true,
-                    err: "",
-                    list
-                })
-            })
-        }
-    })
+app.get(hostConfig.blackListRouter, cas.block, (req, res) => {
+
 })
 
-app.post(hostConfig.liveDetailRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password,
-            authority: 1
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            user = user.get({ plain: true })
-            res.status(200).json({
-                isSuccess: true,
-                err: "",
-                title: user.title,
-                key: user.key,
-                updateAt: user.updateAt
-            })
-        }
-    })
+app.post(hostConfig.addUserToBlackListRouter, cas.block, (req, res) => {
+
 })
 
-app.post(hostConfig.chnageLiveTitleRouter, (req, res) => {
-    let info = JSON.parse(req.body)
-    if (!info || !info.newTitle) {
-        return
-    }
-    User.findOne({
-        where: {
-            id: info.id,
-            password: info.password
-        }
-    }).then((user) => {
-        if (!user) {
-            res.status(200).json({
-                isSuccess: false,
-                err: "用户认证失败, 请确认你的权限足够"
-            })
-        } else {
-            if (info.newTitle.length === 0) {
-                res.status(200).json({
-                    isSuccess: false,
-                    err: "标题不能为空"
-                })
-            } else {
-                res.status(200).json({
-                    isSuccess: true,
-                    err: ""
-                })
-                user.update({
-                    title: info.newTitle,
-                    key: generateKey()
-                })
-            }
-        }
-    })
+app.post(hostConfig.deleteUserFromBlackListRouter, cas.block, (req, res) => {
+
 })
+
+app.get(hostConfig.whiteListRouter, cas.block, (req, res) => {
+
+})
+
+app.post(hostConfig.addUserToWhiteListRouter, cas.block, (req, res) => {
+
+})
+
+app.post(hostConfig.deleteUserFromWhiteListRouter, cas.block, (req, res) => {
+
+})
+
+app.get(hostConfig.allowEveryOneLiveRouter, cas.block, (req, res) => {
+
+})
+
+app.get(hostConfig.forbidEveryOneLiveRouter, cas.block, (req, res) => {
+
+})
+
+app.get(hostConfig.logoutRouter, cas.logout)
