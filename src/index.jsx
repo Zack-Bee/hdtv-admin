@@ -31,7 +31,11 @@ const transitionStyle = {
     }
 }
 
-console.log("%c被你发现了, 欢迎到github: https://github.com/Zack-Bee/hdtv-admin 围观", "color: #fff; font-size: 30px; background-color: #2196f3; padding: 10px; border-radius: 25px;")
+console.log("%cgithub: https://github.com/Zack-Bee/hdtv-admin", `color: #333; 
+font-size: 20px; 
+background-image: linear-gradient(to right, #4facfe, #00f2fe); 
+padding: 10px; 
+border-radius: 20px;`)
 
 class App extends Component {
     render() {
@@ -41,23 +45,6 @@ class App extends Component {
                 <AdminPage />
             </React.Fragment>
         )
-    }
-
-    constructor(props) {
-        super(props)
-        let user = sessionStorage.getItem("user")
-        if (user) {
-            this.state = {
-                isLoginHide: true
-            }
-        } else {
-            this.state = {
-                isLoginHide: false
-            }
-        }
-        
-        this.hideLoginPage = this.hideLoginPage.bind(this)
-        this.showLoginPage = this.showLoginPage.bind(this)
     }
 
     hideLoginPage() {

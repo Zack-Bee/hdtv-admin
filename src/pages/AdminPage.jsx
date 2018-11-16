@@ -6,7 +6,8 @@ import DataTable from "../components/DataTable.jsx"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import AdminBar from "../components/AdminBar.jsx"
 import AdminButtonGroup from "../components/AdminButtonGroup.jsx"
-import post from "../utils/post";
+import post from "../utils/post"
+import get from "../utils/get"
 import config from "../../config/config"
 import LiveCard from "../components/LiveCard.jsx"
 
@@ -35,17 +36,16 @@ const theme = createMuiTheme({
     }
 })
 
-const userTableHeads = [
+const blackListTableHeads = [
     { disablePadding: true, label: '账号ID' },
     { disablePadding: false, label: '频道名' },
-    { disablePadding: false, label: '创建时间' },
-    { disablePadding: false, label: '创建者' },
+    { disablePadding: false, label: '节目标题' },
 ]
 
-const adminTableHeads = [
+const whiteListTableHeads = [
     { disablePadding: true, label: '账号ID' },
-    { disablePadding: false, label: '创建时间' },
-    { disablePadding: false, label: '创建者' },
+    { disablePadding: false, label: '频道名' },
+    { disablePadding: false, label: '节目标题' },
 ]
 
 class AdminPage extends Component {
@@ -61,8 +61,8 @@ class AdminPage extends Component {
                         authority={authority} channelName={channelName}
                     />
                     { authority !== 1 && <AdminButtonGroup authority={authority} 
-                        freshAdminList={this.freshAdminList}
-                        freshUserList={this.freshUserList}
+                        freshWhiteList={this.freshWhiteList}
+                        freshBlackList={this.freshBlackList}
                     />}
                 </MuiThemeProvider>
                 {authority === 1 &&
@@ -71,23 +71,23 @@ class AdminPage extends Component {
                     </div>
                 }
                 {authority >= 2 &&
-                    <DataTable title="用户列表" tableHeads={userTableHeads}
-                        selected={this.state.selectedUser}
-                        rows={this.state.userList} 
-                        onSelectAll={this.selectAllUser}
-                        onSelectOne={this.selectOneUser} 
-                        isSelected={this.isUserSelected}
-                        onClickDelete={this.deleteUser}
+                    <DataTable title="用户列表" tableHeads={blackListTableHeads}
+                        selected={this.state.selectedUserInBlackList}
+                        rows={this.state.blackList} 
+                        onSelectAll={this.selectAllUserInBlackList}
+                        onSelectOne={this.selectOneUserInBlackList}
+                        isSelected={this.isUserInBlackListSelected}
+                        onClickDelete={this.deleteUserFromBlackList}
                     />
                 }
                 {authority >= 3 &&
-                    <DataTable title="管理员列表" tableHeads={adminTableHeads}
-                        selected={this.state.selectedAdmin}
-                        rows={this.state.adminList} 
-                        onSelectAll={this.selectAllAdmin}
-                        onSelectOne={this.selectOneAdmin} 
-                        isSelected={this.isAdminSelected}
-                        onClickDelete={this.deleteAdmin}
+                    <DataTable title="管理员列表" tableHeads={whiteListTableHeads}
+                        selected={this.state.selectedUserInWhiteList}
+                        rows={this.state.whiteList} 
+                        onSelectAll={this.selectAllUserInWhiteList}
+                        onSelectOne={this.selectOneUserInWhiteList} 
+                        isSelected={this.isUserInWhiteListSelected}
+                        onClickDelete={this.deleteUserFromWhiteList}
                     />
                 }
                 <ColorSnackbar open={this.state.isSnackbarOpen}
@@ -102,15 +102,14 @@ class AdminPage extends Component {
     constructor(props) {
         super(props)
 
-        let user = JSON.parse(sessionStorage.getItem("user"))
         this.state = {
-            userId: user.id,
-            channelName: user.channelName,
-            userList: [],
-            adminList: [],
-            selectedUser: [],
-            selectedAdmin: [],
-            authority: user.authority,
+            userId: "",
+            channelName: "",
+            blackList: [],
+            whiteList: [],
+            selectedUserInBlackList: [],
+            selectedUserInWhiteList: [],
+            authority: 0,
             isCreateUserFormOpen: false,
             isCreateAdminFormOpen: false,
             isCreateNewLiveFormOpen: false,
@@ -119,46 +118,42 @@ class AdminPage extends Component {
             snackbarType: "error"
         }
 
-        this.selectOneUser = this.selectOneUser.bind(this)
-        this.selectAllUser = this.selectAllUser.bind(this)
-        this.isUserSelected = this.isUserSelected.bind(this)
-        this.selectOneAdmin = this.selectOneAdmin.bind(this)
-        this.selectAllAdmin = this.selectAllAdmin.bind(this)
-        this.isAdminSelected = this.isAdminSelected.bind(this)
+        this.selectOneUserInBlackList = this.selectOneUserInBlackList.bind(this)
+        this.selectAllUserInBlackList = this.selectAllUserInBlackList.bind(this)
+        this.isUserInBlackListSelected = this.isUserInBlackListSelected.bind(this)
+        this.selectOneUserInWhiteList = this.selectOneUserInWhiteList.bind(this)
+        this.selectAllUserInWhiteList = this.selectAllUserInWhiteList.bind(this)
+        this.isUserInWhiteListSelected = this.isUserInWhiteListSelected.bind(this)
         this.closeSnackbar = this.closeSnackbar.bind(this)
-        this.freshAdminList = this.freshAdminList.bind(this)
-        this.freshUserList = this.freshUserList.bind(this)
-        this.deleteAdmin = this.deleteAdmin.bind(this)
-        this.deleteUser = this.deleteUser.bind(this)
+        this.freshWhiteList = this.freshWhiteList.bind(this)
+        this.freshBlackList = this.freshBlackList.bind(this)
+        this.deleteUserFromWhiteList = this.deleteUserFromWhiteList.bind(this)
+        this.deleteUserFromBlackList = this.deleteUserFromBlackList.bind(this)
     }
 
     componentDidMount() {
         if (this.state.authority >= 2) {
-            this.freshUserList()
+            // this.freshBlackList()
         }
         if (this.state.authority === 3) {
-            this.freshAdminList()
+            // this.freshWhiteList()
         }
     }
 
-    deleteUser() {
-        console.log(1)
-        let user = JSON.parse(sessionStorage.getItem("user"))
-        post(config.httpHost + config.deleteUserRouter, JSON.stringify({
-            id: user.id,
-            password: user.password,
-            deleteList: this.state.selectedUser
+    deleteUserFromBlackList() {
+        post(config.httpHost + config.deleteUserFromBlackListRouter, JSON.stringify({
+            list: this.state.selectedUserInBlackList
         })).then((res) => (
             res.json()
         )).then((data) => {
             console.log(data)
             if (data.isSuccess) {
-                this.freshUserList()
+                this.freshBlackList()
                 this.setState({
                     isSnackbarOpen: true,
                     snackbarMessage: "删除成功",
                     snackbarType: "success",
-                    selectedUser: []
+                    selectedUserInBlackList: []
                 })
             } else {
                 this.setState({
@@ -170,22 +165,19 @@ class AdminPage extends Component {
         })
     }
 
-    deleteAdmin() {
-        let user = JSON.parse(sessionStorage.getItem("user"))
-        post(config.httpHost + config.deleteAdminRouter, JSON.stringify({
-            id: user.id,
-            password: user.password,
-            deleteList: this.state.selectedAdmin
+    deleteUserFromWhiteList() {
+        post(config.httpHost + config.deleteUserFromWhiteListRouter, JSON.stringify({
+            list: this.state.selectedUserInWhiteList
         })).then((res) => (
             res.json()
         )).then((data) => {
             if (data.isSuccess) {
-                this.freshAdminList()
+                this.freshWhiteList()
                 this.setState({
                     isSnackbarOpen: true,
                     snackbarMessage: "删除成功",
                     snackbarType: "success",
-                    selectedAdmin: []
+                    selectedUserInWhiteList: []
                 })
             } else {
                 this.setState({
@@ -203,17 +195,13 @@ class AdminPage extends Component {
         })
     }
 
-    freshUserList() {
-        let user = JSON.parse(sessionStorage.getItem("user"))
-        post(config.httpHost + config.userListRouter, JSON.stringify({
-            id: user.id,
-            password: user.password
-        })).then((res) => (
+    freshBlackList() {
+        get(config.httpHost + config.blackListRouter).then((res) => (
             res.json()
         )).then((data) => {
             if (data.isSuccess) {
                 this.setState({
-                    userList: data.list
+                    blackList: data.list
                 })
             } else {
                 this.setState({
@@ -225,17 +213,13 @@ class AdminPage extends Component {
         })
     }
 
-    freshAdminList() {
-        let user = JSON.parse(sessionStorage.getItem("user"))
-        post(config.httpHost + config.adminListRouter, JSON.stringify({
-            id: user.id,
-            password: user.password
-        })).then((res) => (
+    freshWhiteList() {
+        get(config.httpHost + config.whiteListRouter).then((res) => (
             res.json()
         )).then((data) => {
             if (data.isSuccess) {
                 this.setState({
-                    adminList: data.list
+                    whiteList: data.list
                 })
             } else {
                 this.setState({
@@ -247,70 +231,70 @@ class AdminPage extends Component {
         })
     }
 
-    selectOneUser(event, id) {
-        const { selectedUser } = this.state
-        const selectedIndex = selectedUser.indexOf(id)
+    selectOneUserInBlackList(event, id) {
+        const { selectedUserInBlackList } = this.state
+        const selectedIndex = selectedUserInBlackList.indexOf(id)
         let newSelected = []
 
         if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selectedUser, id)
+            newSelected = newSelected.concat(selectedUserInBlackList, id)
         } else if (selectedIndex === 0) {
-            newSelected = newSelected.concat(selectedUser.slice(1))
-        } else if (selectedIndex === selectedUser.length - 1) {
-            newSelected = newSelected.concat(selectedUser.slice(0, -1))
+            newSelected = newSelected.concat(selectedUserInBlackList.slice(1))
+        } else if (selectedIndex === selectedUserInBlackList.length - 1) {
+            newSelected = newSelected.concat(selectedUserInBlackList.slice(0, -1))
         } else if (selectedIndex > 0) {
             newSelected = newSelected.concat(
-                selectedUser.slice(0, selectedIndex),
-                selectedUser.slice(selectedIndex + 1),
+                selectedUserInBlackList.slice(0, selectedIndex),
+                selectedUserInBlackList.slice(selectedIndex + 1),
             )
         }
 
-        this.setState({ selectedUser: newSelected })
+        this.setState({ selectedUserInBlackList: newSelected })
     }
 
-    selectOneAdmin(event, id) {
-        const { selectedAdmin } = this.state
-        const selectedIndex = selectedAdmin.indexOf(id)
+    selectOneUserInWhiteList(event, id) {
+        const { selectedUserInWhiteList } = this.state
+        const selectedIndex = selectedUserInWhiteList.indexOf(id)
         let newSelected = []
 
         if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selectedAdmin, id)
+            newSelected = newSelected.concat(selectedUserInWhiteList, id)
         } else if (selectedIndex === 0) {
-            newSelected = newSelected.concat(selectedAdmin.slice(1))
-        } else if (selectedIndex === selectedAdmin.length - 1) {
-            newSelected = newSelected.concat(selectedAdmin.slice(0, -1))
+            newSelected = newSelected.concat(selectedUserInWhiteList.slice(1))
+        } else if (selectedIndex === selectedUserInWhiteList.length - 1) {
+            newSelected = newSelected.concat(selectedUserInWhiteList.slice(0, -1))
         } else if (selectedIndex > 0) {
             newSelected = newSelected.concat(
-                selectedAdmin.slice(0, selectedIndex),
-                selectedAdmin.slice(selectedIndex + 1),
+                selectedUserInWhiteList.slice(0, selectedIndex),
+                selectedUserInWhiteList.slice(selectedIndex + 1),
             )
         }
 
-        this.setState({ selectedAdmin: newSelected })
+        this.setState({ selectedUserInWhiteList: newSelected })
     }
 
-    selectAllUser(event) {
+    selectAllUserInBlackList(event) {
         if (event.target.checked) {
-            this.setState({ selectedUser: this.state.userList.map(list => list[0]) })
+            this.setState({ selectedUserInBlackList: this.state.blackList.map(list => list[0]) })
             return
         }
-        this.setState({ selectedUser: [] })
+        this.setState({ selectedUserInBlackList: [] })
     }
 
-    selectAllAdmin(event) {
+    selectAllUserInWhiteList(event) {
         if (event.target.checked) {
-            this.setState({ selectedAdmin: this.state.adminList.map(list => list[0]) })
+            this.setState({ selectedUserInWhiteList: this.state.whiteList.map(list => list[0]) })
             return
         }
-        this.setState({ selectedAdmin: [] })
+        this.setState({ selectedUserInWhiteList: [] })
     }
 
-    isUserSelected(id) {
-        return this.state.selectedUser.indexOf(id) !== -1
+    isUserInBlackListSelected(id) {
+        return this.state.selectedUserInBlackList.indexOf(id) !== -1
     }
 
-    isAdminSelected(id) {
-        return this.state.selectedAdmin.indexOf(id) !== -1
+    isUserInWhiteListSelected(id) {
+        return this.state.selectedUserInWhiteList.indexOf(id) !== -1
     }
 }
 

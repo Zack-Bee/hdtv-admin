@@ -3,6 +3,11 @@ let isEveryOneCanLive = true
 
 module.exports =  {
 
+    // 设置是否是开发模式
+    // 在开发模式下, 会使用MemoryStorage保存session, 对所有请求都提供cookie
+    // 在非开发模式下, 会使用redis保存session, 只对同源请求提供cookie
+    isDevelopMode: true,
+
     // 得到是否每个人都能直播的设置
     getIsEveryOneCanLive() {
         return isEveryOneCanLive
