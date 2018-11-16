@@ -13,7 +13,7 @@ const hostConfig = require("../config/config")
 const generateKey = require("./utils/generateKey")
 const MemoryStore = require('session-memory-store')(session)
 const CASAuthentication = require('cas-authentication')
-const { getIsEveryOneCanLive, allowEveryOneLive, forbidEveryOneLive} = require("../config/config")
+const { getIsEveryOneCanLive, allowEveryOneLive, forbidEveryOneLive } = require("../config/config")
 const OPERATE = Sequelize.Op
 const { adminList } = require("../config/admin")
 
@@ -118,6 +118,7 @@ app.get("/", cas.bounce, (req, res) => {
     res.send("<html><body>helllo, world</body></html>")
 })
 
+// 获取直播详细信息
 app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
     const id = req.session.ID
     const authority = adminList.includes(id) ? 2 : 1
@@ -141,40 +142,172 @@ app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
     })
 })
 
+// 修改直播标题
 app.post(hostConfig.chnageLiveTitleRouter, cas.block, (req, res) => {
-
+    console.log("req.body", req.body)
+    const id = req.session.ID
+    User.findOne({
+        where: {
+            id
+        }
+    }).then((user) => {
+        if (!user) {
+            res.status({
+                isSuccess: false,
+                error: "为查询到改账号的相关信息"
+            })
+        } else {
+            user.update({
+                title: req.body,
+                key: generateKey()
+            }).then(() => {
+                res.status(200).json({
+                    isSuccess: true
+                })
+            }, () => {
+                res.status(200).json({
+                    isSuccess: false,
+                    err: "数据库出了点差错, 请稍后再试"
+                })
+            })
+        }
+    })
 })
 
+// 获取黑名单
 app.get(hostConfig.blackListRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    User.findAll({
+        where: {
+            isInBlackList: true
+        }
+    }).then((users) => {
+        const list = []
+        for (user of users) {
+            user = user.get({ plain: true })
+            list.push({
+                id: user.id,
+                channelName: user.channelName,
+                title: user.title
+            })
+        }
+        res.status(200).json({
+            isSuccess: true,
+            list
+        })
+    })
 })
 
+// 向黑名单加入用户
 app.post(hostConfig.addUserToBlackListRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    User.findOrCreate({
+        where: {
+            id: req.body
+        },
+        defaults: {
+            channelName: id,
+            isInBlackList: true
+        }
+    }).then((user) => {
+        console.log(user)
+        user.update({
+            isInBlackList: true
+        }).then(() => {
+            res.status(200).json({
+                isSuccess: true
+            })
+        }, () => {
+            res.status(200).json({
+                isSuccess: false,
+                err: "数据库出了点差错, 请稍后再试"
+            })
+        })
+    })
 })
 
+// 从黑名单中删除用户
 app.post(hostConfig.deleteUserFromBlackListRouter, cas.block, (req, res) => {
 
 })
 
+// 获取白名单
 app.get(hostConfig.whiteListRouter, cas.block, (req, res) => {
-
+    User.findAll({
+        where: {
+            isInWhiteList: true
+        }
+    }).then((users) => {
+        const list = []
+        for (user of users) {
+            user = user.get({ plain: true })
+            list.push({
+                id: user.id,
+                channelName: user.channelName,
+                title: user.title
+            })
+        }
+        res.status(200).json({
+            isSuccess: true,
+            list
+        })
+    })
 })
 
+// 向白名单添加用户
 app.post(hostConfig.addUserToWhiteListRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    User.findOrCreate({
+        where: {
+            id: req.body
+        },
+        defaults: {
+            channelName: id,
+            isInWhiteList: true
+        }
+    }).then((user) => {
+        console.log(user)
+        user.update({
+            isInWhiteList: true
+        }).then(() => {
+            res.status(200).json({
+                isSuccess: true
+            })
+        }, () => {
+            res.status(200).json({
+                isSuccess: false,
+                err: "数据库出了点差错, 请稍后再试"
+            })
+        })
+    })
 })
 
+// 从白名单删除用户
 app.post(hostConfig.deleteUserFromWhiteListRouter, cas.block, (req, res) => {
 
 })
 
+// 允许所有人直播, 只禁止黑名单内用户
 app.get(hostConfig.allowEveryOneLiveRouter, cas.block, (req, res) => {
 
 })
 
+// 禁止所有人直播, 只允许白名单内用户
 app.get(hostConfig.forbidEveryOneLiveRouter, cas.block, (req, res) => {
 
 })
 
+// 退出登陆
 app.get(hostConfig.logoutRouter, cas.logout)

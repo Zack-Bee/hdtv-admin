@@ -38,14 +38,7 @@ class App extends Component {
         return (
             <React.Fragment>
                 <CssBaseline />
-                <Transition unmountOnExit={true} in={!this.state.isLoginHide} timeout={duration}>
-                    {(state) => (
-                        <div style={Object.assign({}, defaultStyle, transitionStyle[state])}>
-                            <LoginPage hideLoginPage={this.hideLoginPage}/>
-                        </div>
-                    )}
-                </Transition>
-                {this.state.isLoginHide && <AdminPage showLoginPage={this.showLoginPage}/>}
+                <AdminPage />
             </React.Fragment>
         )
     }
