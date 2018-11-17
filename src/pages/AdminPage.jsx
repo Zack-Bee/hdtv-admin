@@ -5,11 +5,17 @@ import blue from '@material-ui/core/colors/blue'
 import DataTable from "../components/DataTable.jsx"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import AdminBar from "../components/AdminBar.jsx"
-import AdminButtonGroup from "../components/AdminButtonGroup.jsx"
 import post from "../utils/post"
 import get from "../utils/get"
 import config from "../../config/config"
 import LiveCard from "../components/LiveCard.jsx"
+import Dialog from '@material-ui/core/Dialog'
+import DialogActions from '@material-ui/core/DialogActions'
+import DialogContent from '@material-ui/core/DialogContent'
+import DialogContentText from '@material-ui/core/DialogContentText'
+import DialogTitle from '@material-ui/core/DialogTitle'
+import TextField from '@material-ui/core/TextField'
+import Button from '@material-ui/core/Button'
 
 const styles = (theme) => ({
     root: {
@@ -55,44 +61,85 @@ class AdminPage extends Component {
         return (
             <div className={classes.root}>
                 <MuiThemeProvider theme={theme}>
-                    <AdminBar title={this.state.channelName} 
-                        userId={this.state.userId} 
-                        showLoginPage={this.props.showLoginPage}
-                        authority={authority} channelName={channelName}
+                    <AdminBar title={this.state.channelName}
+                        userId={this.state.userId}
                     />
-                    { authority !== 1 && <AdminButtonGroup authority={authority} 
-                        freshWhiteList={this.freshWhiteList}
-                        freshBlackList={this.freshBlackList}
-                    />}
+
+                    <Dialog
+                        open={this.state.isAddUserToBlackListFormOpen}
+                        onClose={this.closeCreateUserForm}
+                        aria-labelledby="form-dialog-title">
+                        <DialogTitle>将用户加入黑名单</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                            </DialogContentText>
+                            <TextField margin="dense" label="用户ID"
+                                onChange={this.setUserId}
+                                type="text" fullWidth
+                                defaultValue={this.state.idInputAddToBlackList}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={this.closeCreateUserForm} color="primary">
+                                取消
+                            </Button>
+                            <Button onClick={this.createUser} color="primary">
+                                加入黑名单
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                    <Dialog
+                        open={this.state.isAddUserToWhiteLIstFormOpen}
+                        onClose={this.closeCreateAdminForm}
+                        aria-labelledby="form-dialog-title">
+                        <DialogTitle>将用户加入白名单</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                            </DialogContentText>
+                            <TextField margin="dense" label="用户ID"
+                                onChange={this.setAdminId}
+                                type="text" fullWidth
+                                defaultValue={this.state.idInputAddToWhiteList}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={this.closeCreateAdminForm} color="primary">
+                                取消
+                            </Button>
+                            <Button onClick={this.createAdmin} color="primary">
+                                加入白名单
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                 </MuiThemeProvider>
-                {authority === 1 &&
-                    <div className={classes.cardWrapper}>
-                        <LiveCard />
-                    </div>
-                }
-                {authority >= 2 &&
-                    <DataTable title="用户列表" tableHeads={blackListTableHeads}
+                <div className={classes.cardWrapper}>
+                    <LiveCard />
+                </div>
+                {authority == 2 &&
+                    <DataTable title="黑名单" tableHeads={blackListTableHeads}
                         selected={this.state.selectedUserInBlackList}
-                        rows={this.state.blackList} 
+                        rows={this.state.blackList}
                         onSelectAll={this.selectAllUserInBlackList}
                         onSelectOne={this.selectOneUserInBlackList}
                         isSelected={this.isUserInBlackListSelected}
                         onClickDelete={this.deleteUserFromBlackList}
+                        onClickAdd={this.openAddUserToBlackListForm}
                     />
                 }
-                {authority >= 3 &&
-                    <DataTable title="管理员列表" tableHeads={whiteListTableHeads}
+                {authority == 2 &&
+                    <DataTable title="白名单" tableHeads={whiteListTableHeads}
                         selected={this.state.selectedUserInWhiteList}
-                        rows={this.state.whiteList} 
+                        rows={this.state.whiteList}
                         onSelectAll={this.selectAllUserInWhiteList}
-                        onSelectOne={this.selectOneUserInWhiteList} 
+                        onSelectOne={this.selectOneUserInWhiteList}
                         isSelected={this.isUserInWhiteListSelected}
                         onClickDelete={this.deleteUserFromWhiteList}
+                        onClickAdd={this.openAddUserToWhiteListForm}
                     />
                 }
                 <ColorSnackbar open={this.state.isSnackbarOpen}
                     type={this.state.snackbarType} autoHideDuration={4000}
-                    onClose={this.closeSnackbar} 
+                    onClose={this.closeSnackbar}
                     message={this.state.snackbarMessage}
                 />
             </div>
@@ -109,13 +156,14 @@ class AdminPage extends Component {
             whiteList: [],
             selectedUserInBlackList: [],
             selectedUserInWhiteList: [],
-            authority: 0,
-            isCreateUserFormOpen: false,
-            isCreateAdminFormOpen: false,
-            isCreateNewLiveFormOpen: false,
+            authority: 1,
             isSnackbarOpen: false,
             snackbarMessage: "",
-            snackbarType: "error"
+            snackbarType: "error",
+            isAddUserToBlackListFormOpen: false,
+            isAddUserToWhiteLIstFormOpen: false,
+            idInputAddToBlackList: "",
+            idInputAddToWhiteList: ""
         }
 
         this.selectOneUserInBlackList = this.selectOneUserInBlackList.bind(this)
@@ -129,15 +177,71 @@ class AdminPage extends Component {
         this.freshBlackList = this.freshBlackList.bind(this)
         this.deleteUserFromWhiteList = this.deleteUserFromWhiteList.bind(this)
         this.deleteUserFromBlackList = this.deleteUserFromBlackList.bind(this)
+        this.freshAuthority = this.freshAuthority.bind(this)
+        this.openAddUserToBlackListForm = this.openAddUserToBlackListForm.bind(this)
+        this.openAddUserToWhiteListForm = this.openAddUserToWhiteListForm.bind(this)
+        this.closeAddUserToBlackListForm = this.closeAddUserToBlackListForm.bind(this)
+        this.closeAddUserToWhiteListForm = this.closeAddUserToWhiteListForm.bind(this)
     }
 
     componentDidMount() {
-        if (this.state.authority >= 2) {
-            // this.freshBlackList()
-        }
-        if (this.state.authority === 3) {
-            // this.freshWhiteList()
-        }
+        get(config.httpHost + config.authorityRouter).then((res) => (
+            res.json()
+        )).then((data) => {
+            this.setState({
+                authority: data.authority
+            }, () => {
+                if (data.authority === 2) {
+                    this.freshBlackList()
+                    this.freshWhiteList()
+                }
+            })
+        })
+    }
+
+    setIdInputAddToBlackList(event) {
+        this.setState({
+            idInputAddToBlackList: event.target.value
+        })
+    }
+
+    setIdInputAddToWhiteList(event) {
+        this.setState({
+            idInputAddToWhiteList: event.target.value
+        })
+    }
+
+    openAddUserToBlackListForm() {
+        this.setState({
+            isAddUserToBlackListFormOpen: true
+        })
+    }
+
+    openAddUserToWhiteListForm() {
+        this.setState({
+            isAddUserToWhiteLIstFormOpen: true
+        })
+    }
+
+    closeAddUserToBlackListForm() {
+        this.setState({
+            isAddUserToBlackListFormOpen: false
+        })
+    }
+    closeAddUserToWhiteListForm() {
+        this.setState({
+            isAddUserToWhiteLIstFormOpen: false
+        })
+    }
+
+    freshAuthority(callBack) {
+        return get(config.httpHost + config.authorityRouter).then((res) => (
+            res.json()
+        )).then((data) => {
+            this.setState({
+                authority: data.authority
+            }, callBack)
+        })
     }
 
     deleteUserFromBlackList() {

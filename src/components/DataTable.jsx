@@ -15,6 +15,7 @@ import Checkbox from '@material-ui/core/Checkbox'
 import IconButton from '@material-ui/core/IconButton'
 import Tooltip from '@material-ui/core/Tooltip'
 import DeleteIcon from '@material-ui/icons/Delete'
+import AddIcon from "@material-ui/icons/AddCircle"
 import { lighten } from '@material-ui/core/styles/colorManipulator'
 
 class EnhancedTableHead extends React.Component {
@@ -97,11 +98,18 @@ let EnhancedTableToolbar = props => {
             </div>
             <div className={classes.spacer} />
             <div className={classes.actions}>
-                {numSelected > 0 && (
+                {numSelected > 0 ? (
                     <Tooltip title="删除">
                         <IconButton aria-label="删除" 
                             onClick={props.onClickDelete}>
                             <DeleteIcon />
+                        </IconButton>
+                    </Tooltip>
+                ) : (
+                    <Tooltip title="添加">
+                        <IconButton aria-label="添加" 
+                            onClick={props.onClickAdd}>
+                            <AddIcon />
                         </IconButton>
                     </Tooltip>
                 )}
@@ -135,6 +143,7 @@ class EnhancedTable extends React.Component {
             <Paper className={classes.root}>
                 <EnhancedTableToolbar numSelected={selected.length} 
                     title={title} onClickDelete={this.props.onClickDelete}
+                    onClickAdd={this.props.onClickAdd}
                 />
                 <div className={classes.tableWrapper}>
                     <Table className={classes.table} aria-labelledby="tableTitle">

@@ -32,10 +32,13 @@ module.exports =  {
     baseLiveUrl: "rtmp://202.118.1.139:1935/neu/",
 
     // http主机地址
-    httpHost: "http://127.0.0.1:3000",
+    httpHost: "http://localhost:3000",
 
     // 得到直播的详细信息
     liveDetailRouter: "/liveDetail",
+
+    // 得到账号的权限
+    authorityRouter: "/authority",
 
     // 修改直播的标题
     chnageLiveTitleRouter: "/changeLiveTitle",
@@ -50,20 +53,20 @@ module.exports =  {
     deleteUserFromBlackListRouter: "/deleteUserFromBlackList",
 
     // 获取白名单
-    whiteListRouter: "whiteList",
+    whiteListRouter: "/whiteList",
 
     // 添加用户到白名单
-    addUserToWhiteListRouter: "addUserToWhiteList",
+    addUserToWhiteListRouter: "/addUserToWhiteList",
 
     // 从白名单中删除用户
-    deleteUserFromWhiteListRouter: "deleteUserFromWhiteList",
+    deleteUserFromWhiteListRouter: "/deleteUserFromWhiteList",
 
     // 设置允许每个人都直播
-    allowEveryOneLiveRouter: "allowEveryOneLive",
+    allowEveryOneLiveRouter: "/allowEveryOneLive",
 
     // 设置禁止每个人都直播
-    forbidEveryOneLiveRouter: "forbidEveryOneLive",
+    forbidEveryOneLiveRouter: "/forbidEveryOneLive",
 
     // 退出登陆
-    logoutRouter: "logout"
+    logoutRouter: "/logout"
 }

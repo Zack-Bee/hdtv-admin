@@ -1,13 +1,7 @@
 import React from "react"
 import { Component } from "react"
 import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles'
-import Dialog from '@material-ui/core/Dialog'
-import DialogActions from '@material-ui/core/DialogActions'
-import DialogContent from '@material-ui/core/DialogContent'
-import DialogContentText from '@material-ui/core/DialogContentText'
-import DialogTitle from '@material-ui/core/DialogTitle'
-import TextField from '@material-ui/core/TextField'
-import Button from '@material-ui/core/Button'
+
 import post from "../utils/post"
 import config from "../../config/config"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
@@ -39,65 +33,6 @@ class AdminButtonGroup extends Component {
                         </Button>
                     }
                 </div>
-                <Dialog
-                    open={this.state.isCreateUserFormOpen}
-                    onClose={this.closeCreateUserForm}
-                    aria-labelledby="form-dialog-title">
-                    <DialogTitle>创建用户</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                        </DialogContentText>
-                        <TextField margin="dense" label="用户ID"
-                            onChange={this.setUserId}
-                            type="text" fullWidth 
-                            defaultValue={this.state.userId}
-                        />
-                        <TextField margin="dense" label="频道名称"
-                            onChange={this.setUserChannelName}
-                            type="text" fullWidth 
-                            defaultValue={this.state.userChannelName}
-                        />
-                        <TextField margin="dense" label="密码"
-                            onChange={this.setUserPassword} 
-                            type="password" fullWidth
-                            defaultValue={this.state.userPassword}
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.closeCreateUserForm} color="primary">
-                            取消
-                        </Button>
-                        <Button onClick={this.createUser} color="primary">
-                            创建用户
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-                <Dialog
-                    open={this.state.isCreateAdminFormOpen}
-                    onClose={this.closeCreateAdminForm}
-                    aria-labelledby="form-dialog-title">
-                    <DialogTitle>创建管理员</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                        </DialogContentText>
-                        <TextField margin="dense" label="用户ID"
-                            onChange={this.setAdminId}
-                            type="text" fullWidth
-                        />
-                        <TextField margin="dense" label="确认新密码"
-                            onChange={this.setAdminPassword} 
-                            type="password" fullWidth
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.closeCreateAdminForm} color="primary">
-                            取消
-                        </Button>
-                        <Button onClick={this.createAdmin} color="primary">
-                            创建管理员
-                        </Button>
-                    </DialogActions>
-                </Dialog>
                 <ColorSnackbar type={this.state.snackbarType} 
                     message={this.state.snackbarMessage} autoHideDuration={4000}
                     onClose={this.closeSnackbar} 

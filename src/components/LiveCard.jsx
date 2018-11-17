@@ -14,6 +14,7 @@ import QRCode from "qrcode.react"
 import logo from "../icon/icon.png"
 import config from "../../config/config"
 import post from "../utils/post"
+import get from "../utils/get"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
@@ -25,7 +26,6 @@ import Button from '@material-ui/core/Button'
 import EditIcon from "@material-ui/icons/Edit"
 import Tooltip from '@material-ui/core/Tooltip'
 import blue from "@material-ui/core/colors/blue"
-import { stringify } from 'querystring';
 
 const theme = createMuiTheme({
     palette: {
@@ -104,7 +104,7 @@ class LiveCard extends React.Component {
                                 }} />
                             }
                             title={this.state.title}
-                            subheader={"更新于: " + this.state.updateAt}
+                            subheader={"更新于: " + this.state.updatedAt}
                         />
                         <CardContent>
                             <Typography component="p" gutterBottom={true}>
@@ -176,7 +176,7 @@ class LiveCard extends React.Component {
             expanded: false,
             title: "东北大学95周年校庆",
             pushUrl: "rtmp://hdtv.neu6.edu.cn/live/test?key=123456",
-            updateAt: "2018-07-27",
+            updatedAt: "2018-07-27",
             hdtvLiveUrl: "https://hdtv.neu6.edu.cn/v1/live/test",
             rtmpLiveUrl: "rtmp://hdtv.neu6.edu.cn/live/test",
             isSnackbarOpen: false,
@@ -194,22 +194,14 @@ class LiveCard extends React.Component {
     }
 
     componentDidMount() {
-        let user = JSON.parse(sessionStorage.getItem("user"))
-        this.getDetail(user).then((data) => {
-            if (data.isSuccess) {
-                this.setState({
-                    title: data.title,
-                    updateAt: data.updateAt,
-                    pushUrl: `${config.baseLiveUrl}${user.id}?key=${data.key}`,
-                    hdtvLiveUrl: `${config.hdtvLiveBaseUrl}${user.id}`,
-                    rtmpLiveUrl: `${config.baseLiveUrl}${user.id}`
-                })
-            }
-        }, () => {
+        this.getDetail().then((data) => {
             this.setState({
-                isSnackbarOpen: true,
-                snackbarType: "error",
-                snackbarMessage: "网络请求发生错误, 请检查网络状态后向管理员反映"
+                title: data.title,
+                updatedAt: data.updatedAt,
+                pushUrl: `${config.baseLiveUrl}${data.id}?key=${data.key}`,
+                hdtvLiveUrl: `${config.hdtvLiveBaseUrl}${data.id}`,
+                rtmpLiveUrl: `${config.baseLiveUrl}${data.id}`,
+                key: data.key
             })
         })
     }
@@ -221,7 +213,7 @@ class LiveCard extends React.Component {
     }
 
     changeTitle() {
-        if (this.state.newTitle.length === 0) {
+        if (this.state.newTitle.trim().length === 0) {
             this.setState({
                 isSnackbarOpen: true,
                 snackbarType: "warning",
@@ -230,11 +222,8 @@ class LiveCard extends React.Component {
             return
         }
         let user = JSON.parse(sessionStorage.getItem("user"))
-        post(config.httpHost + config.chnageLiveTitleRouter, JSON.stringify({
-            id: user.id,
-            password: user.password,
-            newTitle: this.state.newTitle
-        })).then((res) => (
+        post(config.httpHost + config.chnageLiveTitleRouter, 
+            this.state.newTitle).then((res) => (
             res.json()
         )).then((data) => {
             if (data.isSuccess) {
@@ -242,10 +231,11 @@ class LiveCard extends React.Component {
                     if (data.isSuccess) {
                         this.setState({
                             title: data.title,
-                            updateAt: data.updateAt,
-                            pushUrl: `${config.baseLiveUrl}${user.id}?key=${data.key}`,
-                            hdtvLiveUrl: `${config.hdtvLiveBaseUrl}${user.id}`,
-                            rtmpLiveUrl: `${config.baseLiveUrl}${user.id}`
+                            updatedAt: data.updatedAt,
+                            pushUrl: `${config.baseLiveUrl}${data.id}?key=${data.key}`,
+                            hdtvLiveUrl: `${config.hdtvLiveBaseUrl}${data.id}`,
+                            rtmpLiveUrl: `${config.baseLiveUrl}${data.id}`,
+                            key: data.key
                         })
                     }
                 }, () => {
@@ -277,11 +267,8 @@ class LiveCard extends React.Component {
         })
     }
 
-    getDetail(user) {
-        return post(config.httpHost + config.liveDetailRouter, JSON.stringify({
-            id: user.id,
-            password: user.password
-        })).then((res) => (
+    getDetail() {
+        return get(config.httpHost + config.liveDetailRouter).then((res) => (
             res.json()
         ))
     }

@@ -45,7 +45,13 @@ module.exports = (sequelize, DataTypes) => (
         },
         title: {
             type: DataTypes.STRING,
-            defaultValue: "测试频道"
+            defaultValue: "测试节目"
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            get() {
+                return moment(this.getDataValue('updatedAt')).format("YYYY-MM-DD HH:mm:ss")
+            }
         }
     })
 )

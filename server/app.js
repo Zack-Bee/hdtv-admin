@@ -7,6 +7,7 @@ const Sequelize = require("sequelize")
 const session = require('express-session')
 const cookieParser = require('cookie-parser')
 const path = require("path")
+const fs = require("fs")
 const mysqlConfig = require("../config/mysql")
 const cors = require("cors")
 const hostConfig = require("../config/config")
@@ -60,7 +61,7 @@ const sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.user,
 const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 
 // 同步数据库
-sequelize.sync({ force: false }).then((res) => {
+sequelize.sync({ force: true }).then((res) => {
     console.log("同步数据库成功!")
     app.listen(3000)
 }, (err) => {
@@ -115,13 +116,21 @@ app.post("/liveDone", (req, res) => {
 // 访问管理界面
 app.get("/", cas.bounce, (req, res) => {
     console.log(req.session)
-    res.send("<html><body>helllo, world</body></html>")
+    fs.createReadStream(path.resolve(__dirname, "../dist/index.html")).pipe(res)
+})
+
+app.get(hostConfig.authorityRouter, cas.block, (req, res) => {
+    const id = req.session.ID
+    const authority = adminList.includes(id) ? 2 : 1
+    res.status(200).json({
+        isSuccess: true,
+        authority
+    })
 })
 
 // 获取直播详细信息
 app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
     const id = req.session.ID
-    const authority = adminList.includes(id) ? 2 : 1
     User.findOrCreate({
         where: {
             id
@@ -129,15 +138,16 @@ app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
         defaults: {
             channelName: id
         }
-    }).then((user) => {
-        const plainUser = user.get({ plain: true })
+    }).then((users) => {
+        const plainUser = users[0].get({ plain: true })
+        console.log(plainUser)
         res.status(200).json({
             isSuccess: true,
             id,
             key: plainUser.key,
             channelName: plainUser.channelName,
             title: plainUser.title,
-            authority
+            updatedAt: plainUser.updatedAt
         })
     })
 })
@@ -189,11 +199,11 @@ app.get(hostConfig.blackListRouter, cas.block, (req, res) => {
         const list = []
         for (user of users) {
             user = user.get({ plain: true })
-            list.push({
-                id: user.id,
-                channelName: user.channelName,
-                title: user.title
-            })
+            list.push([
+                user.id,
+                user.channelName,
+                user.title
+            ])
         }
         res.status(200).json({
             isSuccess: true,
@@ -249,11 +259,11 @@ app.get(hostConfig.whiteListRouter, cas.block, (req, res) => {
         const list = []
         for (user of users) {
             user = user.get({ plain: true })
-            list.push({
-                id: user.id,
-                channelName: user.channelName,
-                title: user.title
-            })
+            list.push([
+                user.id,
+                user.channelName,
+                user.title
+            ])
         }
         res.status(200).json({
             isSuccess: true,
@@ -311,3 +321,5 @@ app.get(hostConfig.forbidEveryOneLiveRouter, cas.block, (req, res) => {
 
 // 退出登陆
 app.get(hostConfig.logoutRouter, cas.logout)
+
+app.use(express.static(path.resolve(__dirname, "../dist")))
