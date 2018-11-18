@@ -61,8 +61,23 @@ const sequelize = new Sequelize(mysqlConfig.database, mysqlConfig.user,
 const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 
 // 同步数据库
-sequelize.sync({ force: true }).then((res) => {
+sequelize.sync({ force: false }).then((res) => {
     console.log("同步数据库成功!")
+    User.findAll({
+        where: {
+            isLive: true
+        }
+    }).then((users) => {
+        for (let user of users) {
+            const plainUser = user.get({ plain: true })
+            liveList.push({
+                name: plainUser.channelName,
+                channelId: plainUser.id,
+                keyWord: "",
+                canPlay: true
+            })
+        }
+    })
     app.listen(3000)
 }, (error) => {
     console.log("同步数据库失败!")
@@ -93,6 +108,12 @@ app.post("/authorize", (req, res) => {
                     user.update({
                         isLive: true
                     })
+                    liveList.push({
+                        name: plainUser.channelName,
+                        channelId: plainUser.id,
+                        keyWord: "",
+                        canPlay: true
+                    })
                 }
             } else {
                 if (plainUser.isInWhiteList) {
@@ -100,17 +121,34 @@ app.post("/authorize", (req, res) => {
                     user.update({
                         isLive: true
                     })
+                    liveList.push({
+                        name: plainUser.channelName,
+                        channelId: plainUser.id,
+                        keyWord: "",
+                        canPlay: true
+                    })
                 } else {
                     res.sendStatus(404)
                 }
             }
+            console.log(liveList)
         }
     })
 })
 
 // 节目推流完毕后从liveList中删除
 app.post("/liveDone", (req, res) => {
+    const info = req.body
     console.log("live done")
+    let index = -1
+    for (let i = 0; i < liveList.length; i++) {
+        if (liveList[i].channelId == info.name) {
+            index = i
+            break
+        }
+    }
+    liveList.splice(index, 1)
+    console.log(liveList)
 })
 
 // 访问管理界面
