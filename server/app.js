@@ -119,12 +119,31 @@ app.get("/", cas.bounce, (req, res) => {
     fs.createReadStream(path.resolve(__dirname, "../dist/index.html")).pipe(res)
 })
 
+// 获取权限信息
 app.get(hostConfig.authorityRouter, cas.block, (req, res) => {
     const id = req.session.ID
     const authority = adminList.includes(id) ? 2 : 1
     res.status(200).json({
         isSuccess: true,
         authority
+    })
+})
+
+// 获取频道名称
+app.get(hostConfig.channelNameRouter, cas.block, (req, res) => {
+    const id = req.session.ID
+    User.findOrCreate({
+        where: {
+            id
+        },
+        defaults: {
+            channelName: id
+        }
+    }).then((users) => {
+        const plainUser = users[0].get({ plain: true })
+        res.status(200).json({
+            channelName: plainUser.channelName
+        })
     })
 })
 
@@ -357,14 +376,42 @@ app.post(hostConfig.deleteUserFromWhiteListRouter, cas.block, (req, res) => {
     })
 })
 
+// 获取是否允许所有人直播的设置
+app.get(hostConfig.isAllowEveryOneLiveRouter, cas.block, (req, res) => {
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    res.status(200).json({
+        isAllowEveryOneLive: hostConfig.getIsEveryOneCanLive()
+    })
+})
+
 // 允许所有人直播, 只禁止黑名单内用户
 app.get(hostConfig.allowEveryOneLiveRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    hostConfig.allowEveryOneLive()
+    res.status(200).json({
+        isSuccess: true
+    })
 })
 
 // 禁止所有人直播, 只允许白名单内用户
 app.get(hostConfig.forbidEveryOneLiveRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    hostConfig.forbidEveryOneLive()
+    res.status(200).json({
+        isSuccess: true
+    })
 })
 
 // 退出登陆

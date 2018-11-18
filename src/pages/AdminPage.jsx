@@ -2,7 +2,6 @@ import React from "react"
 import { Component } from "react"
 import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles'
 import blue from '@material-ui/core/colors/blue'
-import red from "@material-ui/core/colors/red"
 import DataTable from "../components/DataTable.jsx"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import AdminBar from "../components/AdminBar.jsx"
@@ -17,6 +16,7 @@ import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
+import SettingSwitcher from "../components/SettingSwitcher.jsx"
 
 const styles = (theme) => ({
     root: {
@@ -117,6 +117,13 @@ class AdminPage extends Component {
                     <LiveCard />
                 </div>
                 {authority == 2 &&
+                    <MuiThemeProvider theme={theme}>
+                        <div>
+                            <SettingSwitcher />
+                        </div>
+                    </MuiThemeProvider>
+                }
+                {authority == 2 &&
                     <DataTable title="黑名单" tableHeads={blackListTableHeads}
                         selected={this.state.selectedUserInBlackList}
                         rows={this.state.blackList}
@@ -152,7 +159,7 @@ class AdminPage extends Component {
 
         this.state = {
             userId: "",
-            channelName: "",
+            channelName: "加载中",
             blackList: [],
             whiteList: [],
             selectedUserInBlackList: [],
@@ -202,6 +209,14 @@ class AdminPage extends Component {
                 }
             })
         })
+
+        get(config.httpHost + config.channelNameRouter).then((res) => (
+            res.json()
+        )).then((data) => {
+            this.setState({
+                channelName: data.channelName
+            })
+        })
     }
 
     addUserToBlackList() {
@@ -214,25 +229,25 @@ class AdminPage extends Component {
             return
         }
         this.closeAddUserToBlackListForm()
-        post(config.httpHost + config.addUserToBlackListRouter, 
+        post(config.httpHost + config.addUserToBlackListRouter,
             this.state.idInputAddToBlackList).then((res) => (
-            res.json()
-        )).then((data) => {
-            if (data.isSuccess) {
-                this.setState({
-                    snackbarMessage: "成功添加用户到黑名单",
-                    snackbarType: "success",
-                    isSnackbarOpen: true
-                })
-                this.freshBlackList()
-            } else {
-                this.setState({
-                    snackbarMessage: data.error,
-                    snackbarType: "error",
-                    isSnackbarOpen: true
-                })
-            }
-        })
+                res.json()
+            )).then((data) => {
+                if (data.isSuccess) {
+                    this.setState({
+                        snackbarMessage: "成功添加用户到黑名单",
+                        snackbarType: "success",
+                        isSnackbarOpen: true
+                    })
+                    this.freshBlackList()
+                } else {
+                    this.setState({
+                        snackbarMessage: data.error,
+                        snackbarType: "error",
+                        isSnackbarOpen: true
+                    })
+                }
+            })
     }
 
     addUserToWhiteList() {
@@ -245,25 +260,25 @@ class AdminPage extends Component {
             return
         }
         this.closeAddUserToWhiteListForm()
-        post(config.httpHost + config.addUserToWhiteListRouter, 
+        post(config.httpHost + config.addUserToWhiteListRouter,
             this.state.idInputAddToWhiteList).then((res) => (
-            res.json()
-        )).then((data) => {
-            if (data.isSuccess) {
-                this.setState({
-                    snackbarMessage: "成功添加用户到白名单",
-                    snackbarType: "success",
-                    isSnackbarOpen: true
-                })
-                this.freshWhiteList()
-            } else {
-                this.setState({
-                    snackbarMessage: data.error,
-                    snackbarType: "error",
-                    isSnackbarOpen: true
-                })
-            }
-        })
+                res.json()
+            )).then((data) => {
+                if (data.isSuccess) {
+                    this.setState({
+                        snackbarMessage: "成功添加用户到白名单",
+                        snackbarType: "success",
+                        isSnackbarOpen: true
+                    })
+                    this.freshWhiteList()
+                } else {
+                    this.setState({
+                        snackbarMessage: data.error,
+                        snackbarType: "error",
+                        isSnackbarOpen: true
+                    })
+                }
+            })
     }
 
     setIdInputAddToBlackList(event) {
