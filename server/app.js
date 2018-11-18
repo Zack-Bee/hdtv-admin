@@ -64,9 +64,9 @@ const User = sequelize.import(path.resolve(__dirname, "./models/User.js"))
 sequelize.sync({ force: true }).then((res) => {
     console.log("同步数据库成功!")
     app.listen(3000)
-}, (err) => {
+}, (error) => {
     console.log("同步数据库失败!")
-    throw new Error(err)
+    throw new Error(error)
 })
 
 // 推流认证路由
@@ -140,7 +140,6 @@ app.get(hostConfig.liveDetailRouter, cas.block, (req, res) => {
         }
     }).then((users) => {
         const plainUser = users[0].get({ plain: true })
-        console.log(plainUser)
         res.status(200).json({
             isSuccess: true,
             id,
@@ -177,7 +176,7 @@ app.post(hostConfig.chnageLiveTitleRouter, cas.block, (req, res) => {
             }, () => {
                 res.status(200).json({
                     isSuccess: false,
-                    err: "数据库出了点差错, 请稍后再试"
+                    error: "数据库出了点差错, 请稍后再试"
                 })
             })
         }
@@ -224,11 +223,11 @@ app.post(hostConfig.addUserToBlackListRouter, cas.block, (req, res) => {
             id: req.body
         },
         defaults: {
-            channelName: id,
+            channelName: req.body,
             isInBlackList: true
         }
-    }).then((user) => {
-        console.log(user)
+    }).then((users) => {
+        const user = users[0]
         user.update({
             isInBlackList: true
         }).then(() => {
@@ -238,7 +237,7 @@ app.post(hostConfig.addUserToBlackListRouter, cas.block, (req, res) => {
         }, () => {
             res.status(200).json({
                 isSuccess: false,
-                err: "数据库出了点差错, 请稍后再试"
+                error: "数据库出了点差错, 请稍后再试"
             })
         })
     })
@@ -246,11 +245,38 @@ app.post(hostConfig.addUserToBlackListRouter, cas.block, (req, res) => {
 
 // 从黑名单中删除用户
 app.post(hostConfig.deleteUserFromBlackListRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    const parsedBody = JSON.parse(req.body)
+    User.findAll({
+        where: {
+            id: {
+                [OPERATE.or]: parsedBody.list
+            }
+        }
+    }).then((users) => {
+        for (user of users) {
+            user.update({
+                isInBlackList: false
+            })
+        }
+    }).then(() => {
+        res.status(200).json({
+            isSuccess: true
+        })
+    })
 })
 
 // 获取白名单
 app.get(hostConfig.whiteListRouter, cas.block, (req, res) => {
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
     User.findAll({
         where: {
             isInWhiteList: true
@@ -284,11 +310,11 @@ app.post(hostConfig.addUserToWhiteListRouter, cas.block, (req, res) => {
             id: req.body
         },
         defaults: {
-            channelName: id,
+            channelName: req.body,
             isInWhiteList: true
         }
-    }).then((user) => {
-        console.log(user)
+    }).then((users) => {
+        const user = users[0]
         user.update({
             isInWhiteList: true
         }).then(() => {
@@ -298,7 +324,7 @@ app.post(hostConfig.addUserToWhiteListRouter, cas.block, (req, res) => {
         }, () => {
             res.status(200).json({
                 isSuccess: false,
-                err: "数据库出了点差错, 请稍后再试"
+                error: "数据库出了点差错, 请稍后再试"
             })
         })
     })
@@ -306,7 +332,29 @@ app.post(hostConfig.addUserToWhiteListRouter, cas.block, (req, res) => {
 
 // 从白名单删除用户
 app.post(hostConfig.deleteUserFromWhiteListRouter, cas.block, (req, res) => {
-
+    const id = req.session.ID
+    if (!adminList.includes(id)) {
+        res.sendStatus(401)
+        return
+    }
+    const parsedBody = JSON.parse(req.body)
+    User.findAll({
+        where: {
+            id: {
+                [OPERATE.or]: parsedBody.list
+            }
+        }
+    }).then((users) => {
+        for (user of users) {
+            user.update({
+                isInWhiteList: false
+            })
+        }
+    }).then(() => {
+        res.status(200).json({
+            isSuccess: true
+        })
+    })
 })
 
 // 允许所有人直播, 只禁止黑名单内用户

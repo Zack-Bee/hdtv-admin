@@ -17,6 +17,8 @@ import Tooltip from '@material-ui/core/Tooltip'
 import DeleteIcon from '@material-ui/icons/Delete'
 import AddIcon from "@material-ui/icons/AddCircle"
 import { lighten } from '@material-ui/core/styles/colorManipulator'
+import blue from "@material-ui/core/colors/blue"
+import red from "@material-ui/core/colors/red"
 
 class EnhancedTableHead extends React.Component {
     render() {
@@ -74,6 +76,12 @@ const toolbarStyles = theme => ({
     title: {
         flex: '0 0 auto',
     },
+    red: {
+        color: red[800]
+    },
+    blue: {
+        color: blue[500]
+    }
 })
 
 let EnhancedTableToolbar = props => {
@@ -100,14 +108,14 @@ let EnhancedTableToolbar = props => {
             <div className={classes.actions}>
                 {numSelected > 0 ? (
                     <Tooltip title="删除">
-                        <IconButton aria-label="删除" 
+                        <IconButton className={classes.red} aria-label="删除" 
                             onClick={props.onClickDelete}>
                             <DeleteIcon />
                         </IconButton>
                     </Tooltip>
                 ) : (
                     <Tooltip title="添加">
-                        <IconButton aria-label="添加" 
+                        <IconButton className={classes.blue} aria-label="添加" 
                             onClick={props.onClickAdd}>
                             <AddIcon />
                         </IconButton>

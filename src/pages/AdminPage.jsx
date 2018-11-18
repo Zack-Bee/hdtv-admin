@@ -2,6 +2,7 @@ import React from "react"
 import { Component } from "react"
 import { withStyles, createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles'
 import blue from '@material-ui/core/colors/blue'
+import red from "@material-ui/core/colors/red"
 import DataTable from "../components/DataTable.jsx"
 import ColorSnackbar from "../components/ColorSnackbar.jsx"
 import AdminBar from "../components/AdminBar.jsx"
@@ -67,46 +68,46 @@ class AdminPage extends Component {
 
                     <Dialog
                         open={this.state.isAddUserToBlackListFormOpen}
-                        onClose={this.closeCreateUserForm}
+                        onClose={this.closeAddUserToBlackListForm}
                         aria-labelledby="form-dialog-title">
                         <DialogTitle>将用户加入黑名单</DialogTitle>
                         <DialogContent>
                             <DialogContentText>
                             </DialogContentText>
                             <TextField margin="dense" label="用户ID"
-                                onChange={this.setUserId}
+                                onChange={this.setIdInputAddToBlackList}
                                 type="text" fullWidth
                                 defaultValue={this.state.idInputAddToBlackList}
                             />
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={this.closeCreateUserForm} color="primary">
+                            <Button onClick={this.closeAddUserToBlackListForm} color="primary">
                                 取消
                             </Button>
-                            <Button onClick={this.createUser} color="primary">
+                            <Button onClick={this.addUserToBlackList} color="primary">
                                 加入黑名单
                             </Button>
                         </DialogActions>
                     </Dialog>
                     <Dialog
                         open={this.state.isAddUserToWhiteLIstFormOpen}
-                        onClose={this.closeCreateAdminForm}
+                        onClose={this.closeAddUserToWhiteListForm}
                         aria-labelledby="form-dialog-title">
                         <DialogTitle>将用户加入白名单</DialogTitle>
                         <DialogContent>
                             <DialogContentText>
                             </DialogContentText>
                             <TextField margin="dense" label="用户ID"
-                                onChange={this.setAdminId}
+                                onChange={this.setIdInputAddToWhiteList}
                                 type="text" fullWidth
                                 defaultValue={this.state.idInputAddToWhiteList}
                             />
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={this.closeCreateAdminForm} color="primary">
+                            <Button onClick={this.closeAddUserToWhiteListForm} color="primary">
                                 取消
                             </Button>
-                            <Button onClick={this.createAdmin} color="primary">
+                            <Button onClick={this.addUserToWhiteList} color="primary">
                                 加入白名单
                             </Button>
                         </DialogActions>
@@ -182,6 +183,10 @@ class AdminPage extends Component {
         this.openAddUserToWhiteListForm = this.openAddUserToWhiteListForm.bind(this)
         this.closeAddUserToBlackListForm = this.closeAddUserToBlackListForm.bind(this)
         this.closeAddUserToWhiteListForm = this.closeAddUserToWhiteListForm.bind(this)
+        this.addUserToBlackList = this.addUserToBlackList.bind(this)
+        this.addUserToWhiteList = this.addUserToWhiteList.bind(this)
+        this.setIdInputAddToBlackList = this.setIdInputAddToBlackList.bind(this)
+        this.setIdInputAddToWhiteList = this.setIdInputAddToWhiteList.bind(this)
     }
 
     componentDidMount() {
@@ -196,6 +201,68 @@ class AdminPage extends Component {
                     this.freshWhiteList()
                 }
             })
+        })
+    }
+
+    addUserToBlackList() {
+        if (this.state.idInputAddToBlackList.trim().length === 0) {
+            this.setState({
+                snackbarMessage: "ID号不允许为空",
+                snackbarType: "warning",
+                isSnackbarOpen: true
+            })
+            return
+        }
+        this.closeAddUserToBlackListForm()
+        post(config.httpHost + config.addUserToBlackListRouter, 
+            this.state.idInputAddToBlackList).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    snackbarMessage: "成功添加用户到黑名单",
+                    snackbarType: "success",
+                    isSnackbarOpen: true
+                })
+                this.freshBlackList()
+            } else {
+                this.setState({
+                    snackbarMessage: data.error,
+                    snackbarType: "error",
+                    isSnackbarOpen: true
+                })
+            }
+        })
+    }
+
+    addUserToWhiteList() {
+        if (this.state.idInputAddToWhiteList.trim().length === 0) {
+            this.setState({
+                snackbarMessage: "ID号不允许为空",
+                snackbarType: "warning",
+                isSnackbarOpen: true
+            })
+            return
+        }
+        this.closeAddUserToWhiteListForm()
+        post(config.httpHost + config.addUserToWhiteListRouter, 
+            this.state.idInputAddToWhiteList).then((res) => (
+            res.json()
+        )).then((data) => {
+            if (data.isSuccess) {
+                this.setState({
+                    snackbarMessage: "成功添加用户到白名单",
+                    snackbarType: "success",
+                    isSnackbarOpen: true
+                })
+                this.freshWhiteList()
+            } else {
+                this.setState({
+                    snackbarMessage: data.error,
+                    snackbarType: "error",
+                    isSnackbarOpen: true
+                })
+            }
         })
     }
 
