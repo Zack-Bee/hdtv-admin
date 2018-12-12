@@ -21,8 +21,8 @@ const { adminList } = require("../config/admin")
 // 将正在播放的列表存储在内存中, 用于减少mysql的负载
 const liveList = []
 const cas = new CASAuthentication({
-    cas_url: "https://sso.neu.cn/cas",
-    service_url: "http://localhost:3000",
+    cas_url: hostConfig.casUrl,
+    service_url: hostConfig.httpHost,
     cas_version: "2.0",
     renew: false,
     is_dev_mode: false,
@@ -78,7 +78,7 @@ sequelize.sync({ force: false }).then((res) => {
             })
         }
     })
-    app.listen(3000)
+    app.listen(80)
 }, (error) => {
     console.log("同步数据库失败!")
     throw new Error(error)
@@ -86,6 +86,7 @@ sequelize.sync({ force: false }).then((res) => {
 
 // 推流认证路由
 app.post("/authorize", (req, res) => {
+    console.log("开始准备认证")
     const info = req.body
     console.log(info)
     User.findOne({

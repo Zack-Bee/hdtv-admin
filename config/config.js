@@ -34,7 +34,10 @@ module.exports =  {
     baseLiveUrl: "rtmp://202.118.1.139:1935/neu/",
 
     // http主机地址
-    httpHost: "http://localhost:3000",
+    httpHost: "http://v.neu6.edu.cn",
+
+    // cas地址
+    casUrl: "https://sso.neu.cn/cas",
 
     // 获取获取频道名称
     channelNameRouter: "/channelName",
